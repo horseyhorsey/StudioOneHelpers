@@ -1,0 +1,59 @@
+name: Build and Deploy Blazor WebAssembly to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install WASM workload
+        run: dotnet workload install wasm-tools
+
+      - name: Publish Blazor WebAssembly App
+        run: dotnet publish StudioOneHelpers -c Release
+
+      - name: Debug contents of publish folder
+        run: |
+          echo "Listing publish folder:"
+          ls -R StudioOneHelpers/bin/Release/net9.0/publish/wwwroot
+
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1.1.0
+        with:
+          html_path: StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers/index.html
+          base_href: /StudioOneHelpers/
+
+      - name: Add .nojekyll
+        run: touch StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers/.nojekyll
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

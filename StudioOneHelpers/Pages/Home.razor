@@ -1,0 +1,18 @@
+﻿@page "/"
+@using Blazored.LocalStorage
+@using StudioOneHelpers.Pages.Shared
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<PageTitle>S1 Helpers</PageTitle>
+
+<MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.False">
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-1" Style="height: 100%">
+                <CascadingValue Value="localStorage">
+                    <CommandsMacros />
+                </CascadingValue>
+            </MudPaper>
+        </MudItem>        
+    </MudGrid>
+</MudContainer>

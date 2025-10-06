@@ -1,0 +1,302 @@
+﻿@using Blazored.LocalStorage
+@using HtmlAgilityPack
+@using System.Text.Json
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<style>
+    .mud-table-cell {
+        padding: 4px;
+    }
+</style>
+
+<script>
+    window.pdfInterop = {
+        printTest: function (commandsData) {
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Build rows for the table
+            const rows = commandsData.map(item => [
+                item.sectionName,
+                item.commandName,
+                item.shortcut
+            ]);
+
+            doc.setFontSize(8);
+
+            // Create table
+            doc.autoTable({
+                head: [['Section', 'Command', 'Shortcut']],
+                body: rows,
+                startY: 2,
+                styles: { fontSize: 8 }
+            });
+
+            doc.save('S1_Shortcuts.pdf');
+        }
+    };
+
+</script>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid Spacing="1">
+
+        <MudItem xs="12">
+            <MudText Align="Align.Center" Typo="Typo.h5" Style="font-weight:bold">Commands & Macros</MudText>
+        </MudItem>
+
+        <MudItem sm="3" xs="12">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <div class="mt-2 mr-2">
+                        <MudStack Row>
+                            <FileDropper HelperText="Drop or Click to add file"
+                                         Accept="text/html"
+                                         MaxFileCount="1"
+                                         OnFilesChanged="OnFilesChangedAsync" />
+
+                            <MudToggleIconButton @bind-Toggled="@_open" Icon="@Icons.Material.Filled.Help" Color="@Color.Primary"
+                                                 ToggledIcon="@Icons.Material.Filled.Help" ToggledColor="@Color.Secondary" />
+                        </MudStack>
+                    </div>
+
+                    <MudStack Class="pt-8" Row>
+                        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Clearable
+                                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        <MudTooltip Text="Only show assigned keys">
+                            <MudCheckBox T="bool" Class="mr-1"
+                                         UnCheckedIcon="@Icons.Material.Filled.Keyboard" CheckedIcon="@Icons.Material.Filled.Keyboard"
+                                         Value=_showAssignedKeysOnly ValueChanged="OnShowKeysOnly" Label="Assigned" Size="Size.Small"
+                                          Color="Color.Success" UncheckedColor="Color.Error"/>
+                        </MudTooltip>
+                    </MudStack>
+
+                    <MudStack Row>
+                        <MudButtonGroup Size="Size.Small" Class="pr-2" Color="Color.Dark" Variant="Variant.Filled" DropShadow=false FullWidth>
+                            <MudButton OnClick="@ExpandAllGroupsAsync">Expand all</MudButton>
+                            <MudButton OnClick="@CollapseAllGroupsAsync">Collapse all</MudButton>
+                        </MudButtonGroup>                        
+                    </MudStack>          
+                                        
+                    <MudTooltip Text="Export to PDF">
+                        <MudButton OnClick="@PrintPage" Class="mt-2" StartIcon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" FullWidth Variant="Variant.Filled">PDF</MudButton>
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+
+        <MudItem sm="9" xs=12>
+            @if (Commands?.Any() ?? false)
+            {
+                <MudDataGrid Items="FilteredCommands" T="CommandItem" @ref=_dataGrid
+                             Hover FixedHeader Groupable
+                             GroupExpanded=false
+                             GroupClass="pa-2"
+                             Height="76vh"
+                             Filterable
+                             QuickFilter="@_quickFilter"
+                             ShowFilterIcons=false
+                             ShowMenuIcon=false>
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@FilteredCommands?.Count / @Commands.Count Commands / Macros</MudText>
+                        <MudSpacer />
+                    </ToolBarContent>
+
+                    <Columns>
+                        <PropertyColumn Property="x => x.SectionName" Title="SectionName" Groupable="true" Grouping>
+                            <GroupTemplate>
+                                <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                            </GroupTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.CommandName" Title="Command" Groupable=false />
+                        <PropertyColumn Property="x => x.Shortcut" Title="Keys" Groupable=false />
+                    </Columns>
+
+                    <GroupTemplate>
+                        <span style="font-weight:bold">
+                            @context.Title: @context.Grouping.Key Count: @context.Grouping.Count()
+                            @if (context.DataGrid.FilteredItems.Count() != 0)
+                            {
+                                @string.Format(" Percentage: {0:P1}", context.Grouping.Count() / ((double)context.DataGrid.FilteredItems.Count()))
+                            }
+                        </span>
+                    </GroupTemplate>
+                </MudDataGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<MudPopover Open="@_open" Fixed="true" Class="px-4 pt-4">
+    <div class="d-flex flex-column">
+        <MudText>1. Export keyboard shortcuts from the studio one menu as text (html).</MudText>
+        <MudText>2. Drag / Drop / Click this bar to import the shortcuts</MudText>
+        <MudText>3. Commands are stored locally in the browser</MudText>
+        <MudButton OnClick="@ToggleOpen" Class="ml-auto mr-n3 mb-1" Color="Color.Error">Close</MudButton>
+    </div>
+</MudPopover>
+
+@code {
+
+    [CascadingParameter] public ILocalStorageService? LocalStorage { get; set; }
+
+    public List<CommandItem>? Commands { get; set; }
+
+    public List<CommandItem>? FilteredCommands { get; set; } = new();
+
+    public string? Html { get; set; }
+
+    MudDataGrid<CommandItem> _dataGrid = null!;
+
+    private string? _searchString;
+
+    private bool _showAssignedKeysOnly = false;
+
+    public class CommandItem
+    {
+        public string? SectionName { get; set; }
+        public string? CommandName { get; set; }
+        public string? Shortcut { get; set; }
+    }
+
+    protected void OnShowKeysOnly(bool value)
+    {
+        _showAssignedKeysOnly = value;
+        FilteredCommands?.Clear();
+        if (value)
+            FilteredCommands?.AddRange(Commands != null ? Commands.Where(x => !string.IsNullOrWhiteSpace(x.Shortcut)) : Enumerable.Empty<CommandItem>());
+        else
+            FilteredCommands?.AddRange(Commands != null ? Commands : Enumerable.Empty<CommandItem>());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && LocalStorage != null)
+        {
+            var json = await LocalStorage.GetItemAsync<string>("ShortcutsData") ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                Commands = JsonSerializer.Deserialize<List<CommandItem>>(json);
+                FilteredCommands?.AddRange(Commands ?? Enumerable.Empty<CommandItem>());
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    /// <summary>Extract S1 html table data to a commands list</summary>
+    /// <param name="s1HtmlExport"></param>
+    /// <returns></returns>
+    public async Task ProcessShortcutS(string s1HtmlExport)
+    {
+        // Load HTML
+        var doc = new HtmlDocument();
+        doc.LoadHtml(s1HtmlExport);
+
+        // Dictionary to store data
+        Commands = new();
+        FilteredCommands = new();
+
+        // Find all <h2> nodes
+        var headers = doc.DocumentNode.SelectNodes("//h2");
+        if (headers != null)
+        {
+            foreach (var header in headers)
+            {
+                string sectionName = header.InnerText.Trim();
+                // Find the next <table> node after this header
+                var table = header.SelectSingleNode("following-sibling::table[1]");
+                if (table != null)
+                {
+
+                    var trNodes = table.SelectNodes(".//tr");
+                    if (trNodes != null)
+                    {
+                        foreach (var tr in trNodes)
+                        {
+                            var tds = tr.SelectNodes(".//td");
+                            if (tds != null && tds.Count > 0)
+                            {
+                                string commandName = tds[0].InnerText.Trim();
+                                string shortcut = tds.Count > 1 ? tds[1].InnerText.Trim() : "";
+                                Commands.Add(new CommandItem
+                                {
+                                    SectionName = sectionName,
+                                    CommandName = commandName,
+                                    Shortcut = shortcut
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Serialize to JSON
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string jsonString = JsonSerializer.Serialize(Commands, options);
+
+        // save imported to local storage
+        if (LocalStorage != null) await LocalStorage.SetItemAsync("ShortcutsData", jsonString);
+
+        //File.WriteAllText(outputJsonPath, jsonString);
+        //Console.WriteLine($"Extracted data saved to {outputJsonPath}");
+    }
+
+    protected async Task OnFilesChangedAsync(IReadOnlyList<IBrowserFile> files)
+    {
+        if (files.Count == 0)
+            return;
+        var file = files[0];
+        using (var stream = file.OpenReadStream(1024 * 1024 * 5)) // 5 MB max
+        {
+            using (var reader = new StreamReader(stream))
+            {
+                Html = await reader.ReadToEndAsync();
+                await ProcessShortcutS(Html);
+                Snackbar.Add($"Imported {Commands?.Count} shortcuts from {file.Name}", Severity.Success);
+                OnShowKeysOnly(_showAssignedKeysOnly);
+            }
+        }
+    }
+
+    private Func<CommandItem, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.SectionName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.CommandName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.Shortcut?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        return false;
+    };
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return _dataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return _dataGrid.CollapseAllGroupsAsync();
+    }
+
+    /// <summary>Run the javascript "pdfInterop.printTest" function</summary>
+    /// <returns></returns>
+    private async Task PrintPage()
+    {
+        await JSRuntime.InvokeVoidAsync("pdfInterop.printTest", _dataGrid.FilteredItems);
+    }
+
+    private bool _open;
+    private void ToggleOpen() => _open = !_open;
+}
+
+
