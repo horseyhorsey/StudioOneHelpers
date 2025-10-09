@@ -35,6 +35,10 @@ jobs:
           html_path: StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers/index.html
           base_href: /StudioOneHelpers/
 
+      - name: Update service worker base path
+        run: |
+          sed -i 's|const base = "/";|const base = "/StudioOneHelpers/";|g' StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers/service-worker.published.js
+
       - name: Add .nojekyll
         run: touch StudioOneHelpers/bin/Release/net9.0/publish/wwwroot/StudioOneHelpers/.nojekyll
 
