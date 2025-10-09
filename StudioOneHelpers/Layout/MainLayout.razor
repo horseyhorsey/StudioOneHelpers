@@ -17,8 +17,12 @@
                            OnClick="ShowHelpDialog"
                            Style="color: rgba(255,255,255,0.8); margin-left: 8px;"
                            Title="Get help with Studio One Helpers" />
-            <MudButton StartIcon="@Icons.Material.Filled.Keyboard" OnClick="NavigateToCommands">Commands</MudButton>
-            <MudButton StartIcon="@Icons.Material.Filled.Extension" OnClick="NavigateToPlugins">Plugins</MudButton>            
+            <MudButton StartIcon="@Icons.Material.Filled.Keyboard" 
+                       OnClick="NavigateToCommands"
+                       Disabled="@(commandsDataStatus == null)">Commands</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Extension" 
+                       OnClick="NavigateToPlugins"
+                       Disabled="@(pluginsDataStatus == null)">Plugins</MudButton>            
             @if (availableCategories.Any())
             {
                 <MudMenu StartIcon="@Icons.Material.Filled.Category" 
@@ -54,9 +58,11 @@
 @using StudioOneHelpers.Pages.Shared
 @using StudioOneHelpers.Pages.Shared.Dialogs
 @using StudioOneHelpers.Services
+@using Blazored.LocalStorage
 @inject NavigationManager Navigation
 @inject DatabaseProcessingService DatabaseService
 @inject NavigationService NavigationService
+@inject ILocalStorageService LocalStorage
 @implements IDisposable
 
 @code {
@@ -64,6 +70,9 @@
     private bool _isDarkMode = false;
     private MudTheme? _theme = null;
     private List<string> availableCategories = new();
+    private string? commandsDataStatus;
+    private string? pluginsDataStatus;
+    private string? presetsDataStatus;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +86,9 @@
         // Load available categories for the menu
         availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
         
+        // Check data status for navigation buttons
+        await CheckDataStatus();
+        
         // Listen for navigation changes to refresh categories
         Navigation.LocationChanged += OnLocationChanged;
     }
@@ -85,7 +97,22 @@
     {
         // Refresh categories when navigating to ensure menu is up to date
         availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
+        await CheckDataStatus();
         StateHasChanged();
+    }
+
+    private async Task CheckDataStatus()
+    {
+        // Check commands data
+        var commandsData = await LocalStorage.GetItemAsync<string>("CommandsData");
+        commandsDataStatus = !string.IsNullOrEmpty(commandsData) ? "Available" : null;
+
+        // Check plugins data
+        var pluginsData = await LocalStorage.GetItemAsync<string>("PluginsData");
+        pluginsDataStatus = !string.IsNullOrEmpty(pluginsData) ? "Available" : null;
+
+        // Check presets data
+        presetsDataStatus = availableCategories.Any() ? "Available" : null;
     }
 
     private void DrawerToggle() => _drawerOpen = !_drawerOpen;

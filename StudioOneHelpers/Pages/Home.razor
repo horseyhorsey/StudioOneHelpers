@@ -82,6 +82,9 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
                                         No Data
                                     </MudChip>
+                                    <MudText Typo="Typo.caption" Style="color: #7f8c8d; margin-bottom: 16px; font-weight: 500;">
+                                        📝 Export from Studio One → File → Export → Keyboard Shortcuts
+                                    </MudText>
                                 }
                             </div>
                             
@@ -103,6 +106,7 @@
                                            Size="Size.Medium" 
                                            StartIcon="@Icons.Material.Filled.ArrowForward"
                                            OnClick="NavigateToCommands"
+                                           Disabled="@(commandsDataStatus == null)"
                                            Class="modern-button w-100"
                                            Style="border: 2px solid #667eea; color: #667eea; font-weight: 600;">
                                     View
@@ -157,6 +161,9 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
                                         No Data
                                     </MudChip>
+                                    <MudText Typo="Typo.caption" Style="color: #7f8c8d; margin-bottom: 16px; font-weight: 500;">
+                                        📁 Find: %AppData%\PreSonus\Studio One 6\Settings\Plugins-en.settings
+                                    </MudText>
                                 }
                             </div>
                             
@@ -178,6 +185,7 @@
                                            Size="Size.Medium" 
                                            StartIcon="@Icons.Material.Filled.ArrowForward"
                                            OnClick="NavigateToPlugins"
+                                           Disabled="@(pluginsDataStatus == null)"
                                            Class="modern-button w-100"
                                            Style="border: 2px solid #9C27B0; color: #9C27B0; font-weight: 600;">
                                     View
@@ -257,6 +265,9 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
                                         No Data
                                     </MudChip>
+                                    <MudText Typo="Typo.caption" Style="color: #7f8c8d; margin-bottom: 16px; font-weight: 500;">
+                                        📁 Find: %AppData%\PreSonus\Studio One 6\DataStore.db
+                                    </MudText>
                                 }
                             </div>
                             
@@ -278,6 +289,7 @@
                                            Size="Size.Medium" 
                                            StartIcon="@Icons.Material.Filled.ArrowForward"
                                            OnClick="@(() => NavigateToPresetCategory("All"))"
+                                           Disabled="@(presetsDataStatus == null)"
                                            Class="modern-button w-100"
                                            Style="border: 2px solid #FF5722; color: #FF5722; font-weight: 600;">
                                     View All
@@ -425,18 +437,34 @@
 
     public void NavigateToCommands()
     {
+        if (commandsDataStatus == null)
+        {
+            Snackbar.Add("No commands data available. Please import your ShortcutsExport.html file first.", Severity.Warning);
+            return;
+        }
         CurrentView = ViewType.Commands;
         StateHasChanged();
     }
 
     public void NavigateToPlugins()
     {
+        if (pluginsDataStatus == null)
+        {
+            Snackbar.Add("No plugins data available. Please import your Plugins-en.settings file first.", Severity.Warning);
+            return;
+        }
         CurrentView = ViewType.Plugins;
         StateHasChanged();
     }
 
     public void NavigateToPresetCategory(string category)
     {
+        if (presetsDataStatus == null)
+        {
+            Snackbar.Add("No presets data available. Please import your DataStore.db file first.", Severity.Warning);
+            return;
+        }
+        
         if (category == "All")
         {
             // Show all available categories - navigate to the first available category

@@ -15,6 +15,33 @@
                     Welcome to Studio One Helpers! This tool works with your Studio One data to create useful reports and macros. Here's how to get the most out of it:
                 </MudText>
 
+                <!-- What you can do -->
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.h6" Style="font-weight: bold; margin-bottom: 16px;">What You Can Do</MudText>
+
+                <MudStack Spacing="2">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Keyboard" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Commands & Macros:</strong> Filter and export your keyboard shortcuts to PDF, create custom macros
+                        </MudText>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Extension" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Plugins:</strong> Browse your plugin settings and generate macros for quick access
+                        </MudText>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Tertiary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Presets:</strong> Explore your preset categories, search, and create macros for any preset
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+
                 <!-- Workflow explanation -->
                 <MudStack Spacing="3">
                     <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
@@ -31,11 +58,21 @@
                     <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
                         <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
                         <MudStack Spacing="1">
-                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 2: Export from Studio One</MudText>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 2: Find Your Studio One Files</MudText>
                             <MudText Typo="Typo.body2">
-                                Export your keyboard shortcuts (ShortcutsExport.html), plugin settings (Plugins-en.settings), 
-                                and database (DataStore.db) from Studio One's user data folder.
+                                Navigate to your Studio One user data folder and locate these files:
                             </MudText>
+                            <MudStack Spacing="1" Class="ml-4 mt-2">
+                                <MudText Typo="Typo.body2" Style="font-weight: bold;">📁 Commands:</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2">• Go to Studio One → Keyboard Shortcuts → Export to text (html)</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2">• Save as "ShortcutsExport.html"</MudText>
+                                
+                                <MudText Typo="Typo.body2" Style="font-weight: bold;">📁 Plugins:</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2">• Find: %AppData%\PreSonus\Studio One 7\Settings\Plugins-en.settings</MudText>
+                                
+                                <MudText Typo="Typo.body2" Style="font-weight: bold;">📁 Presets:</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2">• Find: %AppData%\PreSonus\Studio One 7\DataStore.db</MudText>
+                            </MudStack>
                         </MudStack>
                     </MudStack>
 
@@ -58,33 +95,7 @@
                         Make sure to re-export from Studio One if you've made changes to your presets, plugins, or commands.
                     </MudText>
                 </MudAlert>
-
-                <!-- What you can do -->
-                <MudDivider Class="my-4" />
-                <MudText Typo="Typo.h6" Style="font-weight: bold; margin-bottom: 16px;">What You Can Do</MudText>
                 
-                <MudStack Spacing="2">
-                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Keyboard" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
-                        <MudText Typo="Typo.body2">
-                            <strong>Commands & Macros:</strong> Filter and export your keyboard shortcuts to PDF, create custom macros
-                        </MudText>
-                    </MudStack>
-                    
-                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Extension" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
-                        <MudText Typo="Typo.body2">
-                            <strong>Plugins:</strong> Browse your plugin settings and generate macros for quick access
-                        </MudText>
-                    </MudStack>
-                    
-                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
-                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Tertiary" Size="Size.Small" Class="mt-1" />
-                        <MudText Typo="Typo.body2">
-                            <strong>Presets:</strong> Explore your preset categories, search, and create macros for any preset
-                        </MudText>
-                    </MudStack>
-                </MudStack>
             </MudStack>
         </MudContainer>
     </DialogContent>
