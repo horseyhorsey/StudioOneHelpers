@@ -33,5 +33,6 @@ builder.Services.AddScoped<PluginProcessingService>();
 builder.Services.AddScoped<DatabaseProcessingService>();
 builder.Services.AddScoped<CommandsProcessingService>();
 builder.Services.AddScoped<PluginLookupService>();
+builder.Services.AddScoped<NavigationService>();
 
 await builder.Build().RunAsync();

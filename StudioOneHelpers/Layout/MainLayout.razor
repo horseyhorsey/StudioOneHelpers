@@ -10,15 +10,15 @@
         
         <MudSpacer />
         <MudButtonGroup Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mr-4">
-            <MudButton StartIcon="@Icons.Material.Filled.Home" Href="/">Home</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Home" OnClick="NavigateToHome">Home</MudButton>
             <MudIconButton Icon="@Icons.Material.Filled.Help"
                            Color="Color.Inherit"
                            Size="Size.Small"
                            OnClick="ShowHelpDialog"
                            Style="color: rgba(255,255,255,0.8); margin-left: 8px;"
                            Title="Get help with Studio One Helpers" />
-            <MudButton StartIcon="@Icons.Material.Filled.Keyboard" Href="/commands">Commands</MudButton>
-            <MudButton StartIcon="@Icons.Material.Filled.Extension" Href="/plugins">Plugins</MudButton>            
+            <MudButton StartIcon="@Icons.Material.Filled.Keyboard" OnClick="NavigateToCommands">Commands</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Extension" OnClick="NavigateToPlugins">Plugins</MudButton>            
             @if (availableCategories.Any())
             {
                 <MudMenu StartIcon="@Icons.Material.Filled.Category" 
@@ -27,7 +27,7 @@
                     <MudDivider />
                     @foreach (var category in availableCategories)
                     {
-                        <MudMenuItem @onclick="() => NavigateToCategory(category)">@category</MudMenuItem>
+                        <MudMenuItem @onclick="() => NavigateToPresetCategory(category)">@category</MudMenuItem>
                     }
                 </MudMenu>
             }
@@ -56,6 +56,7 @@
 @using StudioOneHelpers.Services
 @inject NavigationManager Navigation
 @inject DatabaseProcessingService DatabaseService
+@inject NavigationService NavigationService
 @implements IDisposable
 
 @code {
@@ -136,8 +137,25 @@
         false => Icons.Material.Outlined.DarkMode,
     };
 
-    private void NavigateToCategory(string category) => 
-        Navigation.NavigateTo($"/presets/category/{Uri.EscapeDataString(category)}");
+    private void NavigateToHome()
+    {
+        NavigationService.NavigateToHome();
+    }
+
+    private void NavigateToCommands()
+    {
+        NavigationService.NavigateToCommands();
+    }
+
+    private void NavigateToPlugins()
+    {
+        NavigationService.NavigateToPlugins();
+    }
+
+    private void NavigateToPresetCategory(string category)
+    {
+        NavigationService.NavigateToPresetCategory(category);
+    }
 
     // Override to refresh categories when the layout is rendered
     protected override async Task OnAfterRenderAsync(bool firstRender)

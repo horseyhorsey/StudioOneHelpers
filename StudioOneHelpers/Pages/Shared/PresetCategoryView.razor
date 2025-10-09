@@ -1,0 +1,324 @@
+@using Blazored.LocalStorage
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Services
+@using StudioOneHelpers.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.Json
+@inject DatabaseProcessingService DatabaseService
+@inject ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject MacroGenerationService MacroService
+@inject PluginLookupService PluginLookupService
+
+<MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.ExtraLarge" Style="height: calc(100vh - 80px);">
+    <MudGrid Style="height: 100%;">
+        <MudItem xs="12" Style="height: 100%;">
+            <MudPaper Elevation="2" Class="pa-1" Style="height: 100%;">
+                @if (isLoading)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Style="height: 100%;">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                        <MudText Typo="Typo.h6" Class="mt-4">Loading @CategoryName presets...</MudText>
+                    </MudStack>
+                }
+                else if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudStack AlignItems="AlignItems.Center" Style="height: 100%;">
+                        <MudAlert Severity="Severity.Error" Class="mb-4" Style="max-width: 500px;">
+                            @errorMessage
+                        </MudAlert>
+                    </MudStack>
+                }
+                else
+                {
+                    <div style="display: flex; flex-direction: column; height: 100%;">
+                        <!-- Header with search and controls -->
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-4" Style="flex-shrink: 0;">
+                            <MudText Typo="Typo.h5" Style="font-weight: bold;">@CategoryName Presets</MudText>
+                            <MudSpacer />
+                            <MudTextField @bind-Value="searchString" 
+                                          Placeholder="Search presets..." 
+                                          Adornment="Adornment.Start" 
+                                          Immediate="true" 
+                                          Clearable
+                                          OnClearButtonClick="ClearFilters"
+                                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                                          IconSize="Size.Medium" 
+                                          OnKeyUp="OnSearchChanged"
+                                          DebounceInterval="300"
+                                          Style="min-width: 300px;" />
+                            <MudTooltip Text="Export to PDF">
+                                <MudButton OnClick="PrintPage" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Variant="Variant.Filled">PDF</MudButton>
+                            </MudTooltip>
+                            <MudTooltip Text="View Help">
+                                <MudButton OnClick="ShowHelp" Size="Size.Small" StartIcon="@Icons.Material.Filled.Help" Color="Color.Info" Variant="Variant.Outlined">Help</MudButton>
+                            </MudTooltip>
+                        </MudStack>
+
+                        <!-- Data Grid - takes remaining space -->
+                        <div style="flex: 1; min-height: 0;">
+                            <MudDataGrid T="PresetDescriptor"
+                                         @ref="dataGrid"
+                                         Hover="true" 
+                                         Striped="true" 
+                                         Dense="true"
+                                         FixedHeader="true"
+                                         Height="65vh"
+                                         RowsPerPage="25"
+                                         ServerData="@LoadServerData"
+                                         Filterable="true"
+                                         FilterMode="DataGridFilterMode.Simple"
+                                         Virtualize
+                                         Class="preset-datagrid"
+                                         SortMode="SortMode.Multiple"                                         
+                                         CurrentPageChanged="OnPageChanged">
+                                <ToolBarContent>
+                                    <MudText Typo="Typo.h6">@CategoryName Presets (@totalCount)</MudText>
+                                    <MudSpacer />
+                                </ToolBarContent>
+                                <Columns>
+                                    <PropertyColumn Property="x => x.Vendor" Title="Vendor" Filterable="true">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                                @if (!string.IsNullOrEmpty(context.Item.Vendor))
+                                                {
+                                                    <MudTooltip Text="Filter by this vendor">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                                       Size="Size.Small" 
+                                                                       Color="@Color.Primary"
+                                                                       OnClick="@(() => FilterByValue("Vendor", context.Item.Vendor))" />
+                                                    </MudTooltip>
+                                                }
+                                                <MudText>@context.Item.Vendor</MudText>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="x => x.ClassId" Title="Plugin Name" Filterable="true">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                                @{
+                                                    var pluginName = PluginLookupService.GetPluginNameByClassId(context.Item.ClassId);
+                                                    var displayText = !string.IsNullOrEmpty(pluginName) ? pluginName : context.Item.ClassId;
+                                                }
+                                                @if (!string.IsNullOrEmpty(displayText))
+                                                {
+                                                    <MudTooltip Text="Filter by this plugin">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                                       Size="Size.Small" 
+                                                                       Color="@Color.Primary"
+                                                                       OnClick="@(() => FilterByValue("ClassId", context.Item.ClassId))" />
+                                                    </MudTooltip>
+                                                }
+                                                <MudText>@displayText</MudText>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="x => x.Title" Title="Title" Filterable="true">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                                @if (!string.IsNullOrEmpty(context.Item.Title))
+                                                {
+                                                    <MudTooltip Text="Filter by this title">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                                       Size="Size.Small" 
+                                                                       Color="@Color.Primary"
+                                                                       OnClick="@(() => FilterByValue("Title", context.Item.Title))" />
+                                                    </MudTooltip>
+                                                }
+                                                <MudText>@context.Item.Title</MudText>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="x => x.Creator" Title="Creator" Filterable="true">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                                @if (!string.IsNullOrEmpty(context.Item.Creator))
+                                                {
+                                                    <MudTooltip Text="Filter by this creator">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                                       Size="Size.Small" 
+                                                                       Color="@Color.Primary"
+                                                                       OnClick="@(() => FilterByValue("Creator", context.Item.Creator))" />
+                                                    </MudTooltip>
+                                                }
+                                                <MudText>@context.Item.Creator</MudText>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="x => x.SubFolder" Title="Sub Folder" Filterable="true">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                                @if (!string.IsNullOrEmpty(context.Item.SubFolder))
+                                                {
+                                                    <MudTooltip Text="Filter by this sub folder">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                                       Size="Size.Small" 
+                                                                       Color="@Color.Primary"
+                                                                       OnClick="@(() => FilterByValue("SubFolder", context.Item.SubFolder))" />
+                                                    </MudTooltip>
+                                                }
+                                                <MudText>@context.Item.SubFolder</MudText>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <TemplateColumn Title="Actions" Sortable="false">
+                                        <CellTemplate>
+                                            <MudStack Row Spacing="1">
+                                                <MudTooltip Text="Generate Macro">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Code" 
+                                                                   Size="Size.Small" 
+                                                                   Color="@Color.Primary"
+                                                                   OnClick="@(() => GenerateMacro(context.Item))" />
+                                                </MudTooltip>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        </div>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    [Parameter] public string? CategoryName { get; set; }
+
+    private MudDataGrid<PresetDescriptor>? dataGrid;
+    private List<PresetDescriptor> allPresets = new();
+    private List<PresetDescriptor> filteredPresets = new();
+    private string searchString = "";
+    private bool isLoading = true;
+    private string? errorMessage;
+    private int totalCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPresets();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CategoryName != null)
+        {
+            await LoadPresets();
+        }
+    }
+
+    private async Task LoadPresets()
+    {
+        if (string.IsNullOrEmpty(CategoryName))
+        {
+            errorMessage = "No category specified";
+            isLoading = false;
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            allPresets = await DatabaseService.LoadPresetsByCategoryFromStorageAsync(CategoryName) ?? new List<PresetDescriptor>();
+            filteredPresets = allPresets.ToList();
+            totalCount = allPresets.Count;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading presets: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<GridData<PresetDescriptor>> LoadServerData(GridState<PresetDescriptor> state)
+    {
+        var queryable = filteredPresets.AsQueryable();
+        
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            var searchLower = searchString.ToLower();
+            queryable = queryable.Where(p => 
+                (!string.IsNullOrEmpty(p.Vendor) && p.Vendor.ToLower().Contains(searchLower)) ||
+                (!string.IsNullOrEmpty(p.ClassId) && p.ClassId.ToLower().Contains(searchLower)) ||
+                (!string.IsNullOrEmpty(p.Title) && p.Title.ToLower().Contains(searchLower)) ||
+                (!string.IsNullOrEmpty(p.Creator) && p.Creator.ToLower().Contains(searchLower)) ||
+                (!string.IsNullOrEmpty(p.SubFolder) && p.SubFolder.ToLower().Contains(searchLower)));
+        }
+
+        var items = queryable.ToList();
+        return new GridData<PresetDescriptor>
+        {
+            Items = items.Skip(state.Page * state.PageSize).Take(state.PageSize),
+            TotalItems = items.Count
+        };
+    }
+
+    private async Task OnSearchChanged(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await dataGrid?.ReloadServerData();
+        }
+    }
+
+    private async Task ClearFilters()
+    {
+        searchString = "";
+        await dataGrid?.ReloadServerData();
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        await dataGrid?.ReloadServerData();
+    }
+
+    private void FilterByValue(string column, string value)
+    {
+        // This would need to be implemented based on the data grid's filtering capabilities
+        // For now, we'll just update the search string
+        searchString = value;
+        _ = dataGrid?.ReloadServerData();
+    }
+
+    private async Task GenerateMacro(PresetDescriptor preset)
+    {
+        try
+        {
+            var macroTitle = !string.IsNullOrEmpty(preset.Title) ? preset.Title : "Preset Macro";
+            await MacroService.GenerateAndDownloadMacroAsync(preset, macroTitle, "Generated Macros", null, 0);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating macro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PrintPage()
+    {
+        await JSRuntime.InvokeVoidAsync("printPage");
+    }
+
+    private async Task ShowHelp()
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            BackdropClick = false
+        };
+
+        await DialogService.ShowAsync<PresetCategoryHelpDialog>("", options);
+    }
+}

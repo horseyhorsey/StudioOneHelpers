@@ -3,37 +3,47 @@
 @using Blazored.LocalStorage
 @using StudioOneHelpers.Services
 @using StudioOneHelpers.Pages.Shared
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.Json
 @using MudBlazor
 @inject NavigationManager Navigation
 @inject ILocalStorageService LocalStorage
 @inject DatabaseProcessingService DatabaseService
 @inject PluginProcessingService PluginService
 @inject CommandsProcessingService CommandsService
+@inject MacroGenerationService MacroService
+@inject PluginLookupService PluginLookupService
+@inject NavigationService NavigationService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
 
+
 <PageTitle>S1 Helpers Dashboard</PageTitle>
 
 <MudContainer Class="mt-4" MaxWidth="MaxWidth.False">
-    <MudGrid Justify="Justify.Center" Spacing="3">
-        <!-- Header -->
-        <MudItem xs=12 sm="10" md="8" lg="8">
-            <MudPaper Elevation="4" Class="pa-4 text-center dashboard-header" Style="color: white; border-radius: 12px; position: relative;">
-                <MudStack Row AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Spacing="2">
-                    <MudText Typo="Typo.h4" Style="font-weight: 700; margin-bottom: 4px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">
-                        🎵 Studio One Helpers
-                    </MudText>                    
-                </MudStack>
-                <MudText Typo="Typo.body2" Style="opacity: 0.9; font-weight: 400;">
-                    Tools for studio one commands, macros, plugins and presets
-                </MudText>
-            </MudPaper>
-        </MudItem>
+    @if (CurrentView == ViewType.Dashboard)
+    {
+        <MudGrid Justify="Justify.Center" Spacing="3">
+            <!-- Header -->
+            <MudItem xs=12 sm="10" md="8" lg="8">
+                <MudPaper Elevation="4" Class="pa-4 text-center dashboard-header" Style="color: white; border-radius: 12px; position: relative;">
+                    <MudStack Row AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Spacing="2">
+                        <MudText Typo="Typo.h4" Style="font-weight: 700; margin-bottom: 4px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                            🎵 Studio One Helpers
+                        </MudText>                    
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Style="opacity: 0.9; font-weight: 400;">
+                        Tools for studio one commands, macros, plugins and presets
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        <!-- Cards Container -->
-        <MudItem xs="12">
-            <MudGrid Spacing="3" Justify="Justify.Center">
+            <!-- Cards Container -->
+            <MudItem xs="12">
+                <MudGrid Spacing="3" Justify="Justify.Center">
                 <!-- Commands & Macros Card -->
                 <MudItem xs="12" sm="6" md="4" lg="3">
                     <MudCard Elevation="8" Class="pa-6 dashboard-card" Style="height: 100%; border-radius: 16px;">
@@ -316,9 +326,49 @@
             </MudPaper>
         </MudItem>
     </MudGrid>
+    }
+    else if (CurrentView == ViewType.Commands)
+    {
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-1" Style="height: 100%">
+                    <CascadingValue Value="LocalStorage">
+                        <CommandsMacrosComponent />
+                    </CascadingValue>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (CurrentView == ViewType.Plugins)
+    {
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-1" Style="height: 100%">
+                    <CascadingValue Value="LocalStorage">
+                        <PluginsComponent />
+                    </CascadingValue>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (CurrentView == ViewType.Presets)
+    {
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-1" Style="height: 100%">
+                    <PresetCategoryView CategoryName="@SelectedPresetCategory" />
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
 </MudContainer>
 
 @code {
+    // View state management
+    public enum ViewType { Dashboard, Commands, Plugins, Presets }
+    public ViewType CurrentView { get; set; } = ViewType.Dashboard;
+    public string? SelectedPresetCategory { get; set; }
+
     // File input references
     private InputFile? commandsFileInput;
     private InputFile? pluginsFileInput;
@@ -337,7 +387,11 @@
     // Available preset categories
     private List<string> availableCategories = new();
 
-    protected override async Task OnInitializedAsync() => await CheckDataStatus();
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationService.RegisterHomeComponent(this);
+        await CheckDataStatus();
+    }
 
     private async Task CheckDataStatus()
     {
@@ -369,30 +423,41 @@
         return "Unknown";
     }
 
-    private void NavigateToCommands()
+    public void NavigateToCommands()
     {
-        Navigation.NavigateTo("/commands");
+        CurrentView = ViewType.Commands;
+        StateHasChanged();
     }
 
-    private void NavigateToPlugins()
+    public void NavigateToPlugins()
     {
-        Navigation.NavigateTo("/plugins");
+        CurrentView = ViewType.Plugins;
+        StateHasChanged();
     }
 
-    private void NavigateToPresetCategory(string category)
+    public void NavigateToPresetCategory(string category)
     {
         if (category == "All")
         {
             // Show all available categories - navigate to the first available category
             if (availableCategories.Any())
             {
-                Navigation.NavigateTo($"/presets/category/{availableCategories.First()}");
+                SelectedPresetCategory = availableCategories.First();
+                CurrentView = ViewType.Presets;
             }
         }
         else
         {
-            Navigation.NavigateTo($"/presets/category/{category}");
+            SelectedPresetCategory = category;
+            CurrentView = ViewType.Presets;
         }
+        StateHasChanged();
+    }
+
+    public void NavigateToDashboard()
+    {
+        CurrentView = ViewType.Dashboard;
+        StateHasChanged();
     }
 
     // Commands import handlers
