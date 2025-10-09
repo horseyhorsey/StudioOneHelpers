@@ -1,0 +1,17 @@
+@using MudBlazor
+
+<div class="screenshot-placeholder">
+    <MudPaper Elevation="1" Class="pa-4 text-center" Style="border: 2px dashed #ccc; background-color: #f9f9f9; border-radius: 8px;">
+        <MudStack Spacing="2" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Color="Color.Default" Style="opacity: 0.5;" />
+            <MudText Typo="Typo.h6" Style="font-weight: bold; color: #666;">@Title</MudText>
+            <MudText Typo="Typo.body2" Style="color: #888;">@Description</MudText>
+            <MudChip Color="Color.Info" Size="Size.Small" T="string">Screenshot Placeholder</MudChip>
+        </MudStack>
+    </MudPaper>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+}

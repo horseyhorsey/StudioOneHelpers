@@ -30,5 +30,10 @@ namespace StudioOneHelpers.Services
         {
             _homeComponent?.NavigateToPresetCategory(category);
         }
+
+        public void NavigateToGuide()
+        {
+            _homeComponent?.NavigateToGuide();
+        }
     }
 }

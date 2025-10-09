@@ -95,6 +95,23 @@
                         Make sure to re-export from Studio One if you've made changes to your presets, plugins, or commands.
                     </MudText>
                 </MudAlert>
+
+                <!-- Link to comprehensive guide -->
+                <MudAlert Severity="Severity.Success" Class="mt-4">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Success" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Need more detailed help?</strong> Check out our comprehensive Guide page for step-by-step tutorials with screenshots!
+                        </MudText>
+                        <MudButton StartIcon="@Icons.Material.Filled.ArrowForward" 
+                                   Color="Color.Success" 
+                                   Variant="Variant.Text" 
+                                   Size="Size.Small"
+                                   OnClick="NavigateToGuide">
+                            View Guide
+                        </MudButton>
+                    </MudStack>
+                </MudAlert>
                 
             </MudStack>
         </MudContainer>
@@ -106,6 +123,13 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Inject] NavigationManager Navigation { get; set; } = null!;
 
     void Close() => MudDialog.Close();
+
+    private void NavigateToGuide()
+    {
+        MudDialog.Close();
+        Navigation.NavigateTo("/guide");
+    }
 }

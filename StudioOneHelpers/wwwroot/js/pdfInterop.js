@@ -189,4 +189,30 @@ window.addEventListener('DOMContentLoaded', function() {
             throw error;
         }
     };
+    
+    // Add scroll functions for Guide page
+    window.scrollIntoView = function(elementId) {
+        try {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        } catch (error) {
+            console.error('Error scrolling to element:', error);
+        }
+    };
+    
+    window.scrollToTop = function() {
+        try {
+            window.scrollTo({ 
+                top: 0, 
+                behavior: 'smooth' 
+            });
+        } catch (error) {
+            console.error('Error scrolling to top:', error);
+        }
+    };
 });

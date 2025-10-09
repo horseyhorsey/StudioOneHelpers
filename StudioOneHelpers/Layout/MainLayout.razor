@@ -11,6 +11,7 @@
         <MudSpacer />
         <MudButtonGroup Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mr-4">
             <MudButton StartIcon="@Icons.Material.Filled.Home" OnClick="NavigateToHome">Home</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.School" OnClick="NavigateToGuide">Guide</MudButton>
             <MudIconButton Icon="@Icons.Material.Filled.Help"
                            Color="Color.Inherit"
                            Size="Size.Small"
@@ -182,6 +183,11 @@
     private void NavigateToPresetCategory(string category)
     {
         NavigationService.NavigateToPresetCategory(category);
+    }
+
+    private void NavigateToGuide()
+    {
+        NavigationService.NavigateToGuide();
     }
 
     // Override to refresh categories when the layout is rendered

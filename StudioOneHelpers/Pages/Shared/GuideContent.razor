@@ -1,0 +1,474 @@
+@using MudBlazor
+@using StudioOneHelpers.Pages.Shared
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager NavigationService
+@inject IJSRuntime JSRuntime
+
+<MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
+    <!-- Header -->
+    <MudStack Spacing="4">
+        <MudPaper Elevation="4" Class="pa-6 text-center" Style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px;">
+            <MudStack Row AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.School" Size="Size.Large" Style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" />
+                <MudText Typo="Typo.h4" Style="font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                    Studio One Helpers - Complete User Guide
+                </MudText>
+            </MudStack>
+            <MudText Typo="Typo.body1" Style="opacity: 0.9; font-weight: 400; margin-top: 8px;">
+                Step-by-step tutorials for Commands, Plugins, and Presets workflows
+            </MudText>
+        </MudPaper>
+
+        <!-- Quick Navigation -->
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: bold;">Quick Navigation</MudText>
+            <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                <MudButton StartIcon="@Icons.Material.Filled.Keyboard" 
+                           Color="Color.Primary" 
+                           Variant="Variant.Outlined"
+                           OnClick="@(() => ScrollToSection("commands-section"))">
+                    Commands & Macros
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Extension" 
+                           Color="Color.Secondary" 
+                           Variant="Variant.Outlined"
+                           OnClick="@(() => ScrollToSection("plugins-section"))">
+                    Plugins
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Settings" 
+                           Color="Color.Tertiary" 
+                           Variant="Variant.Outlined"
+                           OnClick="@(() => ScrollToSection("presets-section"))">
+                    Presets
+                </MudButton>
+                <MudSpacer />
+                <MudButton StartIcon="@Icons.Material.Filled.ArrowUpward" 
+                           Color="Color.Default" 
+                           Variant="Variant.Text"
+                           OnClick="@ScrollToTop">
+                    Back to Top
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Commands & Macros Section -->
+        <MudPaper Elevation="2" Class="pa-6" id="commands-section">
+            <MudStack Spacing="4">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Keyboard" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">Commands & Macros</MudText>
+                </MudStack>
+
+                <!-- Why Import Commands -->
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Why import your commands?</strong> Studio One Helpers gives you powerful filtering, PDF export, and printing capabilities that aren't available in Studio One's native interface. You can search through all your shortcuts, filter by assigned/unassigned keys, and generate professional PDF reports.
+                    </MudText>
+                </MudAlert>
+
+                <!-- Step 1: Export from Studio One -->
+                <MudExpansionPanels MultiExpansion="false">
+                    <MudExpansionPanel Text="Step 1: Export Commands from Studio One" Icon="@Icons.Material.Filled.Upload">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                First, you need to export your keyboard shortcuts from Studio One:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Keyboard">
+                                    <MudText Typo="Typo.body2">Open Studio One</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Menu">
+                                    <MudText Typo="Typo.body2">Go to <strong>File → Export → Keyboard Shortcuts</strong></MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Save">
+                                    <MudText Typo="Typo.body2">Save the file as <strong>ShortcutsExport.html</strong></MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Studio One Export Menu" 
+                                Description="Screenshot showing File → Export → Keyboard Shortcuts menu in Studio One" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 2: Import to Studio One Helpers -->
+                    <MudExpansionPanel Text="Step 2: Import to Studio One Helpers" Icon="@Icons.Material.Filled.CloudUpload">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Now import the exported file into Studio One Helpers:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Home">
+                                    <MudText Typo="Typo.body2">Go to the <strong>Home</strong> page</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Upload">
+                                    <MudText Typo="Typo.body2">Click <strong>Import Commands</strong> on the Commands & Macros card</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Folder">
+                                    <MudText Typo="Typo.body2">Select your <strong>ShortcutsExport.html</strong> file</MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Import Commands Interface" 
+                                Description="Screenshot showing the Commands & Macros card with Import Commands button highlighted" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 3: Using Commands Features -->
+                    <MudExpansionPanel Text="Step 3: Using Commands Features" Icon="@Icons.Material.Filled.Search">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Once imported, you can use these powerful features:
+                            </MudText>
+                            
+                            <MudStack Spacing="2">
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Search & Filter</MudText>
+                                        <MudText Typo="Typo.body2">Search by command name, section, or keyboard shortcut. Toggle "Assigned" to show only commands with shortcuts.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">PDF Export</MudText>
+                                        <MudText Typo="Typo.body2">Generate professional PDF reports of your commands. Perfect for documentation or sharing with team members.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Info" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Organized View</MudText>
+                                        <MudText Typo="Typo.body2">Commands are grouped by section with expand/collapse functionality for easy navigation.</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudStack>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Commands Interface" 
+                                Description="Screenshot showing the Commands page with search, filters, and grouped commands" />
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Plugins Section -->
+        <MudPaper Elevation="2" Class="pa-6" id="plugins-section">
+            <MudStack Spacing="4">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Extension" Color="Color.Secondary" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">Studio One Plugins</MudText>
+                </MudStack>
+
+                <!-- Why Use Plugins Feature -->
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Why use Studio One Helpers for plugins?</strong> This interface is superior to Studio One's native plugin manager. You get better search capabilities, PDF export functionality, and the ability to create macros directly from your plugin list. No more hunting through Studio One's cluttered plugin browser!
+                    </MudText>
+                </MudAlert>
+
+                <!-- Step 1: Locate Plugins File -->
+                <MudExpansionPanels MultiExpansion="false">
+                    <MudExpansionPanel Text="Step 1: Locate Your Plugins File" Icon="@Icons.Material.Filled.Folder">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Find your Studio One plugins settings file:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Computer">
+                                    <MudText Typo="Typo.body2">Open File Explorer</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.NavigateNext">
+                                    <MudText Typo="Typo.body2">Navigate to: <strong>%AppData%\PreSonus\Studio One 6\Settings\</strong></MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Description">
+                                    <MudText Typo="Typo.body2">Look for: <strong>Plugins-en.settings</strong></MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <MudAlert Severity="Severity.Warning" Class="mt-3">
+                                <MudText Typo="Typo.body2">
+                                    <strong>Note:</strong> The exact path may vary depending on your Studio One version. Look for the Settings folder in your Studio One installation directory.
+                                </MudText>
+                            </MudAlert>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="File Explorer - Plugins Settings Location" 
+                                Description="Screenshot showing File Explorer with the PreSonus/Studio One 6/Settings folder open, highlighting Plugins-en.settings file" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 2: Import Plugins -->
+                    <MudExpansionPanel Text="Step 2: Import Plugins File" Icon="@Icons.Material.Filled.CloudUpload">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Import the plugins file into Studio One Helpers:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Home">
+                                    <MudText Typo="Typo.body2">Go to the <strong>Home</strong> page</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Upload">
+                                    <MudText Typo="Typo.body2">Click <strong>Import Plugins</strong> on the Studio One Plugins card</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Description">
+                                    <MudText Typo="Typo.body2">Select your <strong>Plugins-en.settings</strong> file</MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Import Plugins Interface" 
+                                Description="Screenshot showing the Studio One Plugins card with Import Plugins button highlighted" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 3: Using Plugins Features -->
+                    <MudExpansionPanel Text="Step 3: Using Plugins Features" Icon="@Icons.Material.Filled.Search">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Once imported, enjoy these powerful plugin management features:
+                            </MudText>
+                            
+                            <MudStack Spacing="2">
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Advanced Search</MudText>
+                                        <MudText Typo="Typo.body2">Search by plugin name, vendor, or folder. Much faster than Studio One's native browser.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">VST3 Filter</MudText>
+                                        <MudText Typo="Typo.body2">Toggle to show only VST3 plugins or all plugin types. Perfect for organizing your plugin collection.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Create Macros</MudText>
+                                        <MudText Typo="Typo.body2">Generate Studio One macros for any plugin with a single click. No more manual macro creation!</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">PDF Export</MudText>
+                                        <MudText Typo="Typo.body2">Generate comprehensive PDF reports of your plugin collection. Great for documentation and sharing.</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudStack>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Plugins Interface" 
+                                Description="Screenshot showing the Plugins page with search, VST3 filter, and plugin list with macro creation buttons" />
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Presets Section -->
+        <MudPaper Elevation="2" Class="pa-6" id="presets-section">
+            <MudStack Spacing="4">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Tertiary" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">Studio One Presets</MudText>
+                </MudStack>
+
+                <!-- Why Use Presets Feature -->
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Why use presets over plugins?</strong> The key advantage is that you can create preset macros with the preset already selected, unlike the plugin component where you'd have to manually select the preset. This saves time and ensures consistency in your macro creation workflow.
+                    </MudText>
+                </MudAlert>
+
+                <!-- Step 1: Locate Database -->
+                <MudExpansionPanels MultiExpansion="false">
+                    <MudExpansionPanel Text="Step 1: Locate Your Studio One Database" Icon="@Icons.Material.Filled.Storage">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Find your Studio One database file:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Computer">
+                                    <MudText Typo="Typo.body2">Open File Explorer</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.NavigateNext">
+                                    <MudText Typo="Typo.body2">Navigate to: <strong>%AppData%\PreSonus\Studio One 6\</strong></MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Storage">
+                                    <MudText Typo="Typo.body2">Look for: <strong>DataStore.db</strong></MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <MudAlert Severity="Severity.Warning" Class="mt-3">
+                                <MudText Typo="Typo.body2">
+                                    <strong>Important:</strong> Make sure Studio One is closed when accessing the database file to avoid any conflicts.
+                                </MudText>
+                            </MudAlert>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="File Explorer - Database Location" 
+                                Description="Screenshot showing File Explorer with the PreSonus/Studio One 6 folder open, highlighting DataStore.db file" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 2: Import Database -->
+                    <MudExpansionPanel Text="Step 2: Import Database" Icon="@Icons.Material.Filled.CloudUpload">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Import the database into Studio One Helpers:
+                            </MudText>
+                            <MudList Dense="true" T="string">
+                                <MudListItem Icon="@Icons.Material.Filled.Home">
+                                    <MudText Typo="Typo.body2">Go to the <strong>Home</strong> page</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Upload">
+                                    <MudText Typo="Typo.body2">Click <strong>Import Presets</strong> on the Studio One Presets card</MudText>
+                                </MudListItem>
+                                <MudListItem Icon="@Icons.Material.Filled.Storage">
+                                    <MudText Typo="Typo.body2">Select your <strong>DataStore.db</strong> file</MudText>
+                                </MudListItem>
+                            </MudList>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Import Presets Interface" 
+                                Description="Screenshot showing the Studio One Presets card with Import Presets button highlighted" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 3: Navigate Categories -->
+                    <MudExpansionPanel Text="Step 3: Navigate Preset Categories" Icon="@Icons.Material.Filled.Folder">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                Once imported, you'll see available preset categories:
+                            </MudText>
+                            
+                            <MudStack Spacing="2">
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Category" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Category Navigation</MudText>
+                                        <MudText Typo="Typo.body2">Use the "Presets" dropdown menu in the top navigation to switch between categories like AudioEffect, AudioSynth, FXChain, etc.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Search & Filter</MudText>
+                                        <MudText Typo="Typo.body2">Search by preset name, vendor, creator, or any field. Click search icons to filter by specific values.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Sort" Color="Color.Info" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Sort & Paginate</MudText>
+                                        <MudText Typo="Typo.body2">Sort by any column and use pagination to navigate through large preset collections efficiently.</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudStack>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Preset Categories Navigation" 
+                                Description="Screenshot showing the navigation bar with Presets dropdown menu open, displaying available categories" />
+                        </MudStack>
+                    </MudExpansionPanel>
+
+                    <!-- Step 4: Create Preset Macros -->
+                    <MudExpansionPanel Text="Step 4: Create Preset Macros" Icon="@Icons.Material.Filled.Add">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.body1">
+                                The key advantage: create macros with presets already selected:
+                            </MudText>
+                            
+                            <MudStack Spacing="2">
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">One-Click Macro Creation</MudText>
+                                        <MudText Typo="Typo.body2">Click the green plus icon next to any preset to create a macro with that preset already loaded.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Time-Saving Workflow</MudText>
+                                        <MudText Typo="Typo.body2">No need to manually select presets in Studio One - the macro handles everything automatically.</MudText>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Small" Class="mt-1" />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">PDF Export</MudText>
+                                        <MudText Typo="Typo.body2">Generate PDF reports of your presets with current search and filter settings applied.</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudStack>
+                            
+                            <!-- Screenshot Placeholder -->
+                            <ScreenshotPlaceholder 
+                                Title="Preset Macro Creation" 
+                                Description="Screenshot showing a preset category page with the macro creation dialog open, demonstrating preset selection" />
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Footer -->
+        <MudPaper Elevation="2" Class="pa-6 text-center" Style="background: linear-gradient(135deg, #f5f7fa, #c3cfe2); border-radius: 12px;">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" Style="font-weight: bold;">Need More Help?</MudText>
+                <MudText Typo="Typo.body2">
+                    Each page in Studio One Helpers has its own Help button for specific feature guidance.
+                </MudText>
+                <MudButton StartIcon="@Icons.Material.Filled.Home" 
+                           Color="Color.Primary" 
+                           Variant="Variant.Filled"
+                           OnClick="NavigateHome">
+                    Back to Dashboard
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private async Task ScrollToSection(string sectionId)
+    {
+        await JSRuntime.InvokeVoidAsync("scrollIntoView", sectionId);
+    }
+
+    private async Task ScrollToTop()
+    {
+        await JSRuntime.InvokeVoidAsync("scrollToTop");
+    }
+
+    private async Task NavigateHome()
+    {
+        NavigationService.NavigateTo("/");
+    }
+}

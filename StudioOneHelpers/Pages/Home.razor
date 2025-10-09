@@ -373,11 +373,21 @@
             </MudItem>
         </MudGrid>
     }
+    else if (CurrentView == ViewType.Guide)
+    {
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-1" Style="height: 100%">
+                    <GuideContent />
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
 </MudContainer>
 
 @code {
     // View state management
-    public enum ViewType { Dashboard, Commands, Plugins, Presets }
+    public enum ViewType { Dashboard, Commands, Plugins, Presets, Guide }
     public ViewType CurrentView { get; set; } = ViewType.Dashboard;
     public string? SelectedPresetCategory { get; set; }
 
@@ -485,6 +495,12 @@
     public void NavigateToDashboard()
     {
         CurrentView = ViewType.Dashboard;
+        StateHasChanged();
+    }
+
+    public void NavigateToGuide()
+    {
+        CurrentView = ViewType.Guide;
         StateHasChanged();
     }
 
