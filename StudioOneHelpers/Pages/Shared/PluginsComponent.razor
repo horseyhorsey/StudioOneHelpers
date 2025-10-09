@@ -1,0 +1,337 @@
+@using Blazored.LocalStorage
+@using System.Xml
+@using System.Text.Json
+@using StudioOneHelpers.Models
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Services
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IDialogService DialogService
+@inject MacroGenerationService MacroService
+@inject PluginProcessingService PluginService
+
+<style>.mud-table-cell { padding: 4px; }</style>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid Spacing="1">
+
+        <MudItem xs="12">
+            <!-- Header with search and controls -->
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2" Style="flex-shrink: 0;">
+                <MudText Typo="Typo.h6" Class="d-none d-md-block" Style="font-weight:bold; min-width: 200px;">Studio One Plugins (Plugins-en.settings)</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" 
+                              @bind-Value:after="OnSearchStringChanged" 
+                              Placeholder="Search plugins..." 
+                              Adornment="Adornment.Start" 
+                              Immediate="true" 
+                              Clearable
+                              AdornmentIcon="@Icons.Material.Filled.Search" 
+                              IconSize="Size.Medium" 
+                              Style="min-width: 300px;" />
+                <MudTooltip Text="Only show VST3 plugins">
+                    <MudCheckBox T="bool" Class="mr-1"
+                                 UnCheckedIcon="@Icons.Material.Filled.Extension" 
+                                 CheckedIcon="@Icons.Material.Filled.Extension"
+                                 Value="_showVst3Only" 
+                                 ValueChanged="OnShowVst3Only" 
+                                 Label="VST3" 
+                                 Size="Size.Small"
+                                 Color="Color.Success" 
+                                 UncheckedColor="Color.Error"/>
+                </MudTooltip>
+                <MudButtonGroup Size="Size.Small" Color="Color.Dark" Variant="Variant.Filled" DropShadow=false>
+                    <MudButton OnClick="@ExpandAllGroupsAsync">Expand all</MudButton>
+                    <MudButton OnClick="@CollapseAllGroupsAsync">Collapse all</MudButton>
+                </MudButtonGroup>
+                <MudTooltip Text="Export to PDF">
+                    <MudButton OnClick="@PrintPage" 
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf" 
+                               Color="Color.Error" 
+                               Variant="Variant.Filled">PDF</MudButton>
+                </MudTooltip>
+                <MudTooltip Text="View Help">
+                    <MudButton OnClick="@ShowHelp" 
+                               StartIcon="@Icons.Material.Filled.Help" 
+                               Color="Color.Info" 
+                               Variant="Variant.Outlined">Help</MudButton>
+                </MudTooltip>
+            </MudStack>
+        </MudItem>
+
+        <MudItem xs="12">
+            @if (PluginList?.Any() ?? false)
+            {
+                <MudDataGrid Items="FilteredPlugins" T="PluginItem" @ref=_dataGrid
+                             Hover FixedHeader Groupable
+                             GroupExpanded=true
+                             GroupClass="pa-2"
+                             Height="70vh"
+                             Filterable
+                             ShowFilterIcons=false
+                             ShowMenuIcon=false
+                             Virtualize
+                             FixedColumns="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@FilteredPlugins?.Count / @PluginList.Count Plugins</MudText>
+                        <MudSpacer />
+                    </ToolBarContent>
+
+                    <Columns>
+                        <PropertyColumn Property="x => x.Category" Title="Category" Groupable="true" Grouping Width="120">
+                            <GroupTemplate>
+                                <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                            </GroupTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Name" Title="Name" Groupable="false" Sortable="true" Width="250">
+                            <CellTemplate>
+                                <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                    @if (!string.IsNullOrEmpty(context.Item.Name))
+                                    {
+                                        <MudTooltip Text="Filter by this name">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                           Size="Size.Small" 
+                                                           Color="@Color.Primary"
+                                                           OnClick="@(() => FilterByValue("Name", context.Item.Name))" />
+                                        </MudTooltip>
+                                    }
+                                    <MudText>@context.Item.Name</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Vendor" Title="Vendor" Groupable="true" Sortable="true" Width="200">
+                            <CellTemplate>
+                                <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                    @if (!string.IsNullOrEmpty(context.Item.Vendor))
+                                    {
+                                        <MudTooltip Text="Filter by this vendor">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                           Size="Size.Small" 
+                                                           Color="@Color.Primary"
+                                                           OnClick="@(() => FilterByValue("Vendor", context.Item.Vendor))" />
+                                        </MudTooltip>
+                                    }
+                                    <MudText>@context.Item.Vendor</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Version" Title="Version" Groupable=false Width="100" />
+                        <PropertyColumn Property="x => x.ClassId" Title="Class ID" Groupable="false" Width="150" />
+                        <TemplateColumn Title="Folder" Groupable="true" Width="200">
+                            <CellTemplate>
+                                <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
+                                    @if (!string.IsNullOrEmpty(context.Item.Folder))
+                                    {
+                                        <MudTooltip Text="Filter by this folder">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Search" 
+                                                           Size="Size.Small" 
+                                                           Color="@Color.Primary"
+                                                           OnClick="@(() => FilterByValue("Folder", context.Item.Folder))" />
+                                        </MudTooltip>
+                                    }
+                                    <MudText>@context.Item.Folder</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Macro" Groupable="false" Width="80">
+                            <CellTemplate>
+                                <MudTooltip Text="Create Studio One Macro">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                                   Size="Size.Small" 
+                                                   Color="@Color.Success"
+                                                   OnClick="@(() => CreateMacro(context.Item))" />
+                                </MudTooltip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+
+                    <GroupTemplate>
+                        <span style="font-weight:bold">
+                            @context.Title: @context.Grouping.Key Count: @context.Grouping.Count()
+                            @if (context.DataGrid.FilteredItems.Count() != 0)
+                            {
+                                @string.Format(" Percentage: {0:P1}", context.Grouping.Count() / ((double)context.DataGrid.FilteredItems.Count()))
+                            }
+                        </span>
+                    </GroupTemplate>
+                </MudDataGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+
+    [CascadingParameter] public ILocalStorageService? LocalStorage { get; set; }
+
+    public List<PluginItem>? PluginList { get; set; }
+
+    public List<PluginItem>? FilteredPlugins { get; set; } = new();
+
+    MudDataGrid<PluginItem> _dataGrid = null!;
+
+    private string? _searchString;
+    private string? _activeFilter = null;
+    private string? _filterValue = null;
+
+    private bool _showVst3Only = false;
+
+
+    protected void OnShowVst3Only(bool value)
+    {
+        _showVst3Only = value;
+        ApplyFilter();
+    }
+
+    private void OnSearchStringChanged()
+    {
+        // If search string is cleared, clear the button filter too
+        if (string.IsNullOrEmpty(_searchString))
+        {
+            _activeFilter = null;
+            _filterValue = null;
+        }
+        ApplyFilter();
+    }
+
+    private void FilterByValue(string filterType, string? value)
+    {
+        _activeFilter = filterType;
+        _filterValue = value;
+        _searchString = value; // Set the search string so user can see what they're filtering by
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (PluginList == null) return;
+
+        FilteredPlugins = PluginService.FilterPlugins(PluginList, _showVst3Only, _searchString, _activeFilter, _filterValue);
+        StateHasChanged();
+    }
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var allPlugins = await PluginService.LoadPluginsFromStorageAsync();
+            if (allPlugins != null)
+            {
+                // Filter to only show AudioSynth and AudioEffect plugins
+                PluginList = allPlugins.Where(x => x.Category == "AudioSynth" || x.Category == "AudioEffect").ToList();
+                ApplyFilter();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    /// <summary>Extract Studio One plugins XML data to a plugins list</summary>
+    /// <param name="xmlContent"></param>
+    /// <returns></returns>
+    public async Task ProcessPlugins(string xmlContent)
+    {
+        PluginList = new();
+        FilteredPlugins = new();
+
+        var allPlugins = await PluginService.ProcessPluginsAsync(xmlContent);
+        PluginList = allPlugins;
+        
+        // Apply current filters
+        ApplyFilter();
+    }
+
+
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return _dataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return _dataGrid.CollapseAllGroupsAsync();
+    }
+
+    /// <summary>Run the javascript "pdfInterop.printPlugins" function</summary>
+    /// <returns></returns>
+    private async Task PrintPage()
+    {
+        try
+        {
+            // Check if the JavaScript function exists before calling it
+            var isAvailable = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.pdfInterop !== 'undefined' && typeof window.pdfInterop.printPlugins === 'function'");
+            
+            if (isAvailable)
+            {
+                await JSRuntime.InvokeVoidAsync("pdfInterop.printPlugins", _dataGrid.FilteredItems);
+                Snackbar.Add("PDF generated successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("PDF functionality not available. Please refresh the page.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating PDF: {ex.Message}", Severity.Error);
+        }
+    }
+
+
+    private async Task ShowHelp()
+    {
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<PluginsHelpDialog>("Help", options);
+    }
+
+    private async Task CreateMacro(PluginItem plugin)
+    {
+        var parameters = new DialogParameters<MacroTitleDialog>
+        {
+            { x => x.PluginName, plugin.Name ?? "Unknown Plugin" },
+            { x => x.ClassId, plugin.ClassId },
+            { x => x.Category, plugin.Category },
+            { x => x.IsFXChain, false }
+        };
+
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true            
+        };
+
+        var dialog = await DialogService.ShowAsync<MacroTitleDialog>("Create Studio One Macro", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled && result.Data is not null)
+        {
+            // Handle both old string format and new object format for backward compatibility
+            if (result.Data is string macroTitle)
+            {
+                await MacroService.GenerateAndDownloadMacroAsync(plugin, macroTitle, "369");
+            }
+            else if (result.Data is { } data)
+            {
+                var title = data.GetType().GetProperty("Title")?.GetValue(data)?.ToString() ?? "";
+                var group = data.GetType().GetProperty("Group")?.GetValue(data)?.ToString() ?? "369";
+                var description = data.GetType().GetProperty("Description")?.GetValue(data)?.ToString();
+                var selectedPreset = data.GetType().GetProperty("SelectedPreset")?.GetValue(data)?.ToString();
+                if (!string.IsNullOrEmpty(title))
+                {
+                    await MacroService.GenerateAndDownloadMacroAsync(plugin, title, group, description, selectedPreset);
+                }
+            }
+        }
+    }
+
+}

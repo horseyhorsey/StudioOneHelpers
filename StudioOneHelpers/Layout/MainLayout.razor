@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject IDialogService DialogService
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -6,11 +7,33 @@
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1" Dense>
-        @* <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" /> *@                            
-        <MudText Typo="Typo.h5" Class="ml-12">Studio One Helpers</MudText>
-        <MudSpacer />        
+        
+        <MudSpacer />
+        <MudButtonGroup Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mr-4">
+            <MudButton StartIcon="@Icons.Material.Filled.Home" Href="/">Home</MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Help"
+                           Color="Color.Inherit"
+                           Size="Size.Small"
+                           OnClick="ShowHelpDialog"
+                           Style="color: rgba(255,255,255,0.8); margin-left: 8px;"
+                           Title="Get help with Studio One Helpers" />
+            <MudButton StartIcon="@Icons.Material.Filled.Keyboard" Href="/commands">Commands</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Extension" Href="/plugins">Plugins</MudButton>            
+            @if (availableCategories.Any())
+            {
+                <MudMenu StartIcon="@Icons.Material.Filled.Category" 
+                        Color="Color.Secondary" Size="Size.Small"
+                        Class="mr-2" Label="Presets">
+                    <MudDivider />
+                    @foreach (var category in availableCategories)
+                    {
+                        <MudMenuItem @onclick="() => NavigateToCategory(category)">@category</MudMenuItem>
+                    }
+                </MudMenu>
+            }
+        </MudButtonGroup>
+                
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-        @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" /> *@
     </MudAppBar>
     @* <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
@@ -27,32 +50,46 @@
     <span class="dismiss">🗙</span>
 </div>
 
+@using Microsoft.AspNetCore.Components.Web
+@using StudioOneHelpers.Pages.Shared
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Services
+@inject NavigationManager Navigation
+@inject DatabaseProcessingService DatabaseService
+@implements IDisposable
+
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode = false;
     private MudTheme? _theme = null;
+    private List<string> availableCategories = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
-
         _theme = new()
         {
             PaletteLight = _lightPalette,
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
         };
+        
+        // Load available categories for the menu
+        availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
+        
+        // Listen for navigation changes to refresh categories
+        Navigation.LocationChanged += OnLocationChanged;
     }
 
-    private void DrawerToggle()
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        _drawerOpen = !_drawerOpen;
+        // Refresh categories when navigating to ensure menu is up to date
+        availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
+        StateHasChanged();
     }
 
-    private void DarkModeToggle()
-    {
-        _isDarkMode = !_isDarkMode;
-    }
+    private void DrawerToggle() => _drawerOpen = !_drawerOpen;
+
+    private void DarkModeToggle() => _isDarkMode = !_isDarkMode;
 
     private readonly PaletteLight _lightPalette = new()
     {
@@ -98,6 +135,38 @@
         true => Icons.Material.Rounded.AutoMode,
         false => Icons.Material.Outlined.DarkMode,
     };
+
+    private void NavigateToCategory(string category) => 
+        Navigation.NavigateTo($"/presets/category/{Uri.EscapeDataString(category)}");
+
+    // Override to refresh categories when the layout is rendered
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Refresh categories on first render to ensure menu is up to date
+            availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowHelpDialog()
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            BackdropClick = false
+        };
+
+        await DialogService.ShowAsync<DashboardHelpDialog>("", options);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
 }
 
 

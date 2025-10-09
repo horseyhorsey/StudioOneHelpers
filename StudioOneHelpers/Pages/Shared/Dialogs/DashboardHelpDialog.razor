@@ -1,0 +1,100 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudStack Spacing="4">
+                <!-- Header -->
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Help" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">Studio One Helpers - Getting Started</MudText>
+                </MudStack>
+
+                <!-- Main content -->
+                <MudText Typo="Typo.body1" Class="mb-3">
+                    Welcome to Studio One Helpers! This tool works with your Studio One data to create useful reports and macros. Here's how to get the most out of it:
+                </MudText>
+
+                <!-- Workflow explanation -->
+                <MudStack Spacing="3">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 1: Manage Your Data in Studio One</MudText>
+                            <MudText Typo="Typo.body2">
+                                First, make sure you've properly organized your presets, plugins, and commands within Studio One itself. 
+                                Studio One will sync this data to its internal settings and database files.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 2: Export from Studio One</MudText>
+                            <MudText Typo="Typo.body2">
+                                Export your keyboard shortcuts (ShortcutsExport.html), plugin settings (Plugins-en.settings), 
+                                and database (DataStore.db) from Studio One's user data folder.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Upload" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 3: Import to Studio One Helpers</MudText>
+                            <MudText Typo="Typo.body2">
+                                Use the import buttons on this dashboard to upload your exported files. 
+                                Studio One Helpers will process the latest data and make it available for reports and macro generation.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+
+                <!-- Important note -->
+                <MudAlert Severity="Severity.Info" Class="mt-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Important:</strong> The files you import here are always the latest version from your Studio One setup. 
+                        Make sure to re-export from Studio One if you've made changes to your presets, plugins, or commands.
+                    </MudText>
+                </MudAlert>
+
+                <!-- What you can do -->
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.h6" Style="font-weight: bold; margin-bottom: 16px;">What You Can Do</MudText>
+                
+                <MudStack Spacing="2">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Keyboard" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Commands & Macros:</strong> Filter and export your keyboard shortcuts to PDF, create custom macros
+                        </MudText>
+                    </MudStack>
+                    
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Extension" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Plugins:</strong> Browse your plugin settings and generate macros for quick access
+                        </MudText>
+                    </MudStack>
+                    
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Tertiary" Size="Size.Small" Class="mt-1" />
+                        <MudText Typo="Typo.body2">
+                            <strong>Presets:</strong> Explore your preset categories, search, and create macros for any preset
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary" Variant="Variant.Filled">Got it!</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    void Close() => MudDialog.Close();
+}

@@ -1,0 +1,211 @@
+﻿@using Blazored.LocalStorage
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Services
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IDialogService DialogService
+@inject CommandsProcessingService CommandsService
+
+<style>
+    .mud-table-cell {
+        padding: 4px;
+    }
+</style>
+
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid Spacing="1">
+
+        <MudItem xs="12">
+            <!-- Header with search and controls -->            
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2" Style="flex-shrink: 0;">                
+                <MudText Align="Align.Center" Typo="Typo.h5" Style="font-weight:bold">Commands & Macros</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Clearable
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Style="min-width: 300px;"></MudTextField>
+                <MudTooltip Text="Only show assigned keys">
+                    <MudCheckBox T="bool" Class="mr-1"
+                                 UnCheckedIcon="@Icons.Material.Filled.Keyboard" CheckedIcon="@Icons.Material.Filled.Keyboard"
+                                 Value=_showAssignedKeysOnly ValueChanged="OnShowKeysOnly" Label="Assigned" Size="Size.Small"
+                                  Color="Color.Success" UncheckedColor="Color.Error"/>
+                </MudTooltip>
+                <MudButtonGroup Size="Size.Small" Color="Color.Dark" Variant="Variant.Filled" DropShadow=false>
+                    <MudButton OnClick="@ExpandAllGroupsAsync">Expand all</MudButton>
+                    <MudButton OnClick="@CollapseAllGroupsAsync">Collapse all</MudButton>
+                </MudButtonGroup>
+                <MudTooltip Text="Export to PDF">
+                    <MudButton OnClick="@PrintPage"
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                               Color="Color.Error"
+                               Variant="Variant.Filled">PDF</MudButton>
+                </MudTooltip>
+                <MudTooltip Text="View Help">
+                    <MudButton OnClick="@ShowHelp"
+                               StartIcon="@Icons.Material.Filled.Help"
+                               Color="Color.Info"
+                               Variant="Variant.Outlined">Help</MudButton>
+                </MudTooltip>
+            </MudStack>
+        </MudItem>
+
+        <MudItem xs="12">
+            @if (Commands?.Any() ?? false)
+            {
+                <MudDataGrid Items="FilteredCommands" T="CommandItem" @ref=_dataGrid
+                             Hover FixedHeader Groupable
+                             GroupExpanded=false
+                             GroupClass="pa-2"
+                             Height="65vh"
+                             Filterable
+                             QuickFilter="@_quickFilter"
+                             ShowFilterIcons=false
+                             Virtualize
+                             ShowMenuIcon=false>
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@FilteredCommands?.Count / @Commands.Count Commands / Macros</MudText>
+                        <MudSpacer />
+                    </ToolBarContent>
+
+                    <Columns>
+                        <PropertyColumn Property="x => x.SectionName" Title="SectionName" Groupable="true" Grouping>
+                            <GroupTemplate>
+                                <span style="font-weight:bold">@(context.Grouping.Key)</span>
+                            </GroupTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.CommandName" Title="Command" Groupable=false />
+                        <PropertyColumn Property="x => x.Shortcut" Title="Keys" Groupable=false />
+                    </Columns>
+
+                    <GroupTemplate>
+                        <span style="font-weight:bold">
+                            @context.Title: @context.Grouping.Key Count: @context.Grouping.Count()
+                            @if (context.DataGrid.FilteredItems.Count() != 0)
+                            {
+                                @string.Format(" Percentage: {0:P1}", context.Grouping.Count() / ((double)context.DataGrid.FilteredItems.Count()))
+                            }
+                        </span>
+                    </GroupTemplate>
+                </MudDataGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+
+    [CascadingParameter] public ILocalStorageService? LocalStorage { get; set; }
+
+    public List<CommandItem>? Commands { get; set; }
+
+    public List<CommandItem>? FilteredCommands { get; set; } = new();
+
+    public string? Html { get; set; }
+
+    MudDataGrid<CommandItem> _dataGrid = null!;
+
+    private string? _searchString;
+
+    private bool _showAssignedKeysOnly = false;
+
+
+    protected void OnShowKeysOnly(bool value)
+    {
+        _showAssignedKeysOnly = value;
+        FilteredCommands?.Clear();
+        if (value)
+            FilteredCommands?.AddRange(Commands != null ? Commands.Where(x => !string.IsNullOrWhiteSpace(x.Shortcut)) : Enumerable.Empty<CommandItem>());
+        else
+            FilteredCommands?.AddRange(Commands != null ? Commands : Enumerable.Empty<CommandItem>());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Commands = await CommandsService.LoadCommandsFromStorageAsync();
+            FilteredCommands?.AddRange(Commands ?? Enumerable.Empty<CommandItem>());
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Extract S1 html table data to a commands list</summary>
+    /// <param name="s1HtmlExport"></param>
+    /// <returns></returns>
+    public async Task ProcessShortcutS(string s1HtmlExport)
+    {
+        // Process commands using the service
+        Commands = await CommandsService.ProcessCommandsAsync(s1HtmlExport);
+        FilteredCommands = new();
+        
+        // Save to storage using the service
+        await CommandsService.SaveCommandsToStorageAsync(Commands);
+    }
+
+
+    private Func<CommandItem, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.SectionName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.CommandName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.Shortcut?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        return false;
+    };
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return _dataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return _dataGrid.CollapseAllGroupsAsync();
+    }
+
+    /// <summary>Run the javascript "pdfInterop.printCmds" function</summary>
+    /// <returns></returns>
+    private async Task PrintPage()
+    {
+        try
+        {
+            // Check if the JavaScript function exists before calling it
+            var isAvailable = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.pdfInterop !== 'undefined' && typeof window.pdfInterop.printCmds === 'function'");
+            
+            if (isAvailable)
+            {
+                await JSRuntime.InvokeVoidAsync("pdfInterop.printCmds", _dataGrid.FilteredItems);
+                Snackbar.Add("PDF generated successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("PDF functionality not available. Please refresh the page.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating PDF: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ShowHelp()
+    {
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<CommandsMacrosHelpDialog>("Help", options);
+    }
+}
+
+

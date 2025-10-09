@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="js/pdfInterop.js"></script>
     <!-- If you add any scoped CSS files, uncomment the following to load them
     <link href="StudioOneHelpers.styles.css" rel="stylesheet" /> -->
     <link href="manifest.webmanifest" rel="manifest" />
@@ -36,6 +38,62 @@
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js?v=1"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script>
+        window.downloadFile = function (filename, dataUrl) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.processSqliteDatabase = async function (fileBytes) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Initialize sql.js
+                    const SQL = await initSqlJs({
+                        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                    });
+
+                    // Load the database from the file bytes
+                    const db = new SQL.Database(new Uint8Array(fileBytes));
+
+                    // Query the PresetDescriptor table
+                    const result = db.exec(`
+                        SELECT _category, _ClassID, _vendor, _title, _creator, _subFolder 
+                        FROM PresetDescriptor
+                    `);
+
+                    if (result.length === 0) {
+                        resolve([]);
+                        return;
+                    }
+
+                    const presets = [];
+                    const columns = result[0].columns;
+                    const values = result[0].values;
+
+                    for (let i = 0; i < values.length; i++) {
+                        const row = values[i];
+                        presets.push({
+                            category: row[0] || null,
+                            classId: row[1] || null,
+                            vendor: row[2] || null,
+                            title: row[3] || null,
+                            creator: row[4] || null,
+                            subFolder: row[5] || null
+                        });
+                    }
+
+                    db.close();
+                    resolve(presets);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        };
+    </script>
 </body>
 
 </html>

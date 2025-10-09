@@ -1,0 +1,156 @@
+@using Blazored.LocalStorage
+@using MudBlazor
+@using StudioOneHelpers.Services
+@using StudioOneHelpers.Models
+@inject DatabaseProcessingService DatabaseService
+@inject ILocalStorageService LocalStorage
+<MudDialog>
+    <DialogContent>
+        <MudContainer Style="max-width: 500px;">
+            <MudStack Spacing="3">
+                @* <MudText Typo="Typo.h6">Create Studio One Macro</MudText> *@
+                @* <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                    Enter a title for your macro. This will be used as the macro name and filename.
+                </MudText> *@
+
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Plugin: @PluginName
+                </MudText>                
+
+                <MudTextField @bind-Value="MacroTitle"
+                              Label="Macro Title"
+                              Placeholder="Enter macro title..."
+                              Required="true"
+                              RequiredError="Macro title is required"
+                              MaxLength="100"
+                              Immediate="true" />
+
+                <MudTextField @bind-Value="GroupName"
+                              Label="Group Name"
+                              Placeholder="Enter group name (e.g., My Macros, Synths etc.)"
+                              MaxLength="50"
+                              Immediate="true" />
+
+                <MudTextField @bind-Value="Description"
+                              Label="Description (Optional)"
+                              Placeholder="Enter a description for your macro..."
+                              MaxLength="200"
+                              Lines="2"
+                              Immediate="true" />
+
+                @if ((!IsFXChain ?? false) && (FilteredPresets?.Any() ?? false))
+                {
+                    <MudSelect @bind-Value="SelectedPreset"
+                               Label="Select Preset (Optional)"
+                               Placeholder="Choose a preset..."
+                               Clearable="true"
+                               T="string">
+                        @foreach (var preset in FilteredPresets)
+                        {
+                            <MudSelectItem Value="@preset.Title">@preset.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </MudStack>
+        </MudContainer>
+    </DialogContent>        
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled" 
+                   OnClick="Submit"
+                   Disabled="@(string.IsNullOrWhiteSpace(MacroTitle) || string.IsNullOrWhiteSpace(GroupName))">
+            Create Macro
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public string PluginName { get; set; } = string.Empty;
+    [Parameter] public string? ClassId { get; set; }
+    [Parameter] public string? Category { get; set; }
+    [Parameter] public bool? IsFXChain { get; set; } = false;
+    [Parameter] public string? PresetTitle { get; set; }
+
+    private string MacroTitle { get; set; } = string.Empty;
+    private string GroupName { get; set; } = string.Empty;
+    private string Description { get; set; } = string.Empty;
+    private string? SelectedPreset { get; set; }
+    
+    private List<PresetDescriptor>? FilteredPresets { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsFXChain ?? false)
+        {
+            MacroTitle = $"Insert FX Chain-{PluginName}";
+        }
+        else if (Category == "AudioEffect")
+        {
+            MacroTitle = $"Insert FX {PluginName}";
+        }
+        else if (Category == "TrackPreset")
+        {
+            MacroTitle = $"Load Track Preset {PluginName}";
+        }
+        else
+        {
+            MacroTitle = $"Insert instrument {PluginName}";
+        }
+        await LoadFilteredPresetsAsync();
+        
+        // Auto-select the preset if provided
+        if (!string.IsNullOrEmpty(PresetTitle))
+        {
+            SelectedPreset = PresetTitle;
+        }
+    }
+    
+    private async Task LoadFilteredPresetsAsync()
+    {
+        if (string.IsNullOrEmpty(ClassId) || string.IsNullOrEmpty(Category))
+            return;
+            
+        try
+        {
+            var allPresets = await DatabaseService.LoadPresetsByCategoryFromStorageAsync(Category);
+            if (allPresets != null)
+            {
+                // Filter presets by ClassId and Category
+                FilteredPresets = allPresets
+                    .Where(p => !string.IsNullOrEmpty(p.ClassId) && 
+                               p.ClassId.Equals(ClassId, StringComparison.OrdinalIgnoreCase) &&
+                               !string.IsNullOrEmpty(p.Category) &&
+                               p.Category.Equals(Category, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(p => p.Title)
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            // If there's an error loading presets, just continue without them
+            FilteredPresets = new List<PresetDescriptor>();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(MacroTitle) && !string.IsNullOrWhiteSpace(GroupName))
+        {
+            var result = new { 
+                Title = MacroTitle, 
+                Group = GroupName, 
+                Description = Description, 
+                SelectedPreset = SelectedPreset, 
+                Mode = (IsFXChain ?? false) ? 0 : (int?)null };
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+    }
+}

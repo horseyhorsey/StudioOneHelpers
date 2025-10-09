@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using StudioOneHelpers;
+using StudioOneHelpers.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -25,5 +26,12 @@ builder.Services.AddBlazoredLocalStorage((config) =>
 });
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// Register custom services
+builder.Services.AddScoped<MacroGenerationService>();
+builder.Services.AddScoped<PluginProcessingService>();
+builder.Services.AddScoped<DatabaseProcessingService>();
+builder.Services.AddScoped<CommandsProcessingService>();
+builder.Services.AddScoped<PluginLookupService>();
 
 await builder.Build().RunAsync();
