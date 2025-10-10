@@ -34,5 +34,6 @@ builder.Services.AddScoped<DatabaseProcessingService>();
 builder.Services.AddScoped<CommandsProcessingService>();
 builder.Services.AddScoped<PluginLookupService>();
 builder.Services.AddScoped<NavigationService>();
+builder.Services.AddScoped<StickerLayoutService>();
 
 await builder.Build().RunAsync();

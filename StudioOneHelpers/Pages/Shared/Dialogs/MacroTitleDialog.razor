@@ -99,6 +99,10 @@
         {
             MacroTitle = $"Insert instrument {PluginName}";
         }
+        
+        // Set default group name
+        GroupName = "My Macros";
+        
         await LoadFilteredPresetsAsync();
         
         // Auto-select the preset if provided

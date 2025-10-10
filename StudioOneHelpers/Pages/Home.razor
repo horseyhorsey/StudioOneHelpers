@@ -385,7 +385,11 @@
     }
 </MudContainer>
 
-@code {
+    @code {
+
+    [SupplyParameterFromQuery]
+    [Parameter] public string? View { get; set; }
+
     // View state management
     public enum ViewType { Dashboard, Commands, Plugins, Presets, Guide }
     public ViewType CurrentView { get; set; } = ViewType.Dashboard;
@@ -395,17 +399,17 @@
     private InputFile? commandsFileInput;
     private InputFile? pluginsFileInput;
     private InputFile? presetsFileInput;
-    
+
     // Data status indicators
     private string? commandsDataStatus;
     private string? pluginsDataStatus;
     private string? presetsDataStatus;
-    
+
     // Loading states
     private bool isCommandsLoading = false;
     private bool isPluginsLoading = false;
     private bool isPresetsLoading = false;
-    
+
     // Available preset categories
     private List<string> availableCategories = new();
 
@@ -414,6 +418,33 @@
         NavigationService.RegisterHomeComponent(this);
         await CheckDataStatus();
     }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(View))
+        {
+            switch (View.ToLower())
+            {
+                case "dashboard":
+                    CurrentView = ViewType.Dashboard;
+                    break;
+                case "commands":
+                    CurrentView = ViewType.Commands;
+                    break;
+                case "plugins":
+                    CurrentView = ViewType.Plugins;
+                    break;
+                case "guide":
+                    CurrentView = ViewType.Guide;
+                    break;
+                    // Add other views as needed
+            }
+
+            StateHasChanged();
+        }
+        return base.OnParametersSetAsync();
+    }
+
 
     private async Task CheckDataStatus()
     {
@@ -496,6 +527,20 @@
     {
         CurrentView = ViewType.Dashboard;
         StateHasChanged();
+    }
+
+    public async Task NavigateToStickers()
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.ExtraExtraLarge,
+            FullWidth = true,
+            FullScreen = true,
+            CloseButton = true,
+            BackdropClick = false
+        };
+
+        await DialogService.ShowAsync<Stickers>("Controller Sticker Designer", options);
     }
 
     public void NavigateToGuide()

@@ -1,0 +1,68 @@
+@using StudioOneHelpers.Models
+@using MudBlazor
+@using StudioOneHelpers.Services
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6">Select Command/Macro for Button: @SelectedButton?.ButtonLabel</MudText>
+                
+                <MudTextField @bind-Value="_searchText" 
+                             Placeholder="Search commands..." 
+                             Adornment="Adornment.Start" 
+                             AdornmentIcon="@Icons.Material.Filled.Search" 
+                             Immediate="true" 
+                             Clearable 
+                             Class="mb-3" />
+                
+                <MudList Clickable="true" MaxHeight="400px" Style="overflow-y: auto;" T="string">
+                    @if (FilteredCommands?.Any() == true)
+                    {
+                        @foreach (var command in FilteredCommands)
+                        {
+                            <MudListItem @onclick="@(() => SelectCommand(command.CommandName))" 
+                                         Style="cursor: pointer;">
+                                <MudText Typo="Typo.body2">@command.CommandName</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #666;">@command.SectionName</MudText>
+                            </MudListItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudListItem>
+                            <MudText Typo="Typo.body2" Style="color: #666;">No commands available. Import commands first.</MudText>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public List<CommandItem> Commands { get; set; } = new();
+    [Parameter] public ControllerButton? SelectedButton { get; set; }
+    
+    private string _searchText = "";
+    
+    private List<CommandItem>? FilteredCommands => Commands?.Where(c => 
+        string.IsNullOrWhiteSpace(_searchText) || 
+        c.CommandName?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true ||
+        c.SectionName?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true).ToList();
+    
+    private void SelectCommand(string commandName)
+    {
+        MudDialog.Close(DialogResult.Ok(commandName));
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

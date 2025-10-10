@@ -31,6 +31,14 @@ namespace StudioOneHelpers.Services
             _homeComponent?.NavigateToPresetCategory(category);
         }
 
+        public async Task NavigateToStickers()
+        {
+            if (_homeComponent != null)
+            {
+                await _homeComponent.NavigateToStickers();
+            }
+        }
+
         public void NavigateToGuide()
         {
             _homeComponent?.NavigateToGuide();

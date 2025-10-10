@@ -293,14 +293,57 @@
 
     private async Task GenerateMacro(PresetDescriptor preset)
     {
-        try
+        var isFXChain = CategoryName == "FXChain";
+        var isAudioEffect = CategoryName == "AudioEffect";
+        var isAudioSynth = CategoryName == "AudioSynth";
+        var isTrackPreset = CategoryName == "TrackPreset";
+        
+        var parameters = new DialogParameters<MacroTitleDialog>
         {
-            var macroTitle = !string.IsNullOrEmpty(preset.Title) ? preset.Title : "Preset Macro";
-            await MacroService.GenerateAndDownloadMacroAsync(preset, macroTitle, "Generated Macros", null, 0);
-        }
-        catch (Exception ex)
+            { x => x.PluginName, preset.Title ?? "Unknown Preset" },
+            { x => x.ClassId, preset.ClassId },
+            { x => x.Category, CategoryName },
+            { x => x.IsFXChain, isFXChain },
+            { x => x.PresetTitle, preset.Title }
+        };
+
+        var options = new DialogOptions()
         {
-            Snackbar.Add($"Error generating macro: {ex.Message}", Severity.Error);
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<MacroTitleDialog>("Create Studio One Macro", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled && result.Data is not null)
+        {
+            if (result.Data is { } data)
+            {
+                var title = data.GetType().GetProperty("Title")?.GetValue(data)?.ToString() ?? "";
+                var group = data.GetType().GetProperty("Group")?.GetValue(data)?.ToString() ?? "369";
+                var description = data.GetType().GetProperty("Description")?.GetValue(data)?.ToString();
+                var modeProperty = data.GetType().GetProperty("Mode");
+                var mode = modeProperty?.GetValue(data) as int? ?? 0;
+
+                if (!string.IsNullOrEmpty(title))
+                {
+                    if (isFXChain)
+                    {
+                        await MacroService.GenerateAndDownloadMacroAsync(preset, title, group, description, mode);
+                    }
+                    else if (isAudioEffect || isAudioSynth || isTrackPreset)
+                    {
+                        // For AudioEffect, AudioSynth, and TrackPreset presets, generate macro with preset already selected
+                        await MacroService.GenerateAndDownloadMacroAsync(preset, title, group, description);
+                    }
+                    else
+                    {
+                        Snackbar.Add("Macro generation for this preset type is not yet implemented", Severity.Warning);
+                    }
+                }
+            }
         }
     }
 

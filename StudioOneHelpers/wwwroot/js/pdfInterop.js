@@ -114,6 +114,89 @@ window.addEventListener('DOMContentLoaded', function() {
             }
         },
         
+        printStickers: function (layoutData, gridRows, gridColumns, buttonWidth, buttonHeight, sizeUnit) {
+            try {
+                if (!window.jspdf) {
+                    console.error('jsPDF library not loaded');
+                    return;
+                }
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Convert dimensions to PDF points
+                // 1 mm = 2.83465 points, 1 cm = 10 mm
+                let widthInMm = buttonWidth;
+                let heightInMm = buttonHeight;
+                
+                if (sizeUnit === 'cm') {
+                    widthInMm = buttonWidth * 10; // Convert cm to mm
+                    heightInMm = buttonHeight * 10;
+                }
+                
+                const buttonWidthPoints = widthInMm * 2.83465;
+                const buttonHeightPoints = heightInMm * 2.83465;
+                
+                // Calculate grid dimensions
+                const totalGridWidth = buttonWidthPoints * gridColumns;
+                const totalGridHeight = buttonHeightPoints * gridRows;
+                
+                // Center the grid on the page
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const startX = (pageWidth - totalGridWidth) / 2;
+                const startY = (pageHeight - totalGridHeight) / 2;
+                
+                // Draw each button
+                layoutData.forEach(button => {
+                    const x = startX + (button.column * buttonWidthPoints);
+                    const y = startY + (button.row * buttonHeightPoints);
+                    
+                    // Set button color
+                    doc.setFillColor(button.color);
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    
+                    // Draw button shape
+                    if (button.shape === 'circle') {
+                        const centerX = x + (buttonWidthPoints / 2);
+                        const centerY = y + (buttonHeightPoints / 2);
+                        const radius = Math.min(buttonWidthPoints, buttonHeightPoints) / 2 - 1;
+                        doc.circle(centerX, centerY, radius, 'FD');
+                    } else {
+                        doc.rect(x, y, buttonWidthPoints, buttonHeightPoints, 'FD');
+                    }
+                    
+                    // Add text if assigned
+                    if (button.assignedText && button.assignedText.trim() !== '') {
+                        doc.setTextColor(255, 255, 255); // White text
+                        
+                        // Scale font size based on button size
+                        const fontSize = Math.max(6, Math.min(12, buttonWidthPoints / 8));
+                        doc.setFontSize(fontSize);
+                        
+                        // Center text in button
+                        const textX = x + (buttonWidthPoints / 2);
+                        const textY = y + (buttonHeightPoints / 2) + (fontSize / 3);
+                        
+                        // Split text if too long
+                        const maxChars = Math.floor(buttonWidthPoints / (fontSize * 0.6));
+                        let displayText = button.assignedText;
+                        if (displayText.length > maxChars) {
+                            displayText = displayText.substring(0, maxChars - 3) + '...';
+                        }
+                        
+                        doc.text(displayText, textX, textY, { align: 'center' });
+                    }
+                });
+                
+                doc.save('Controller_Stickers.pdf');
+            } catch (error) {
+                console.error('Error generating sticker PDF:', error);
+                throw error;
+            }
+        },
+        
         downloadFile: function (fileName, base64Content) {
             try {
                 // Convert base64 to blob

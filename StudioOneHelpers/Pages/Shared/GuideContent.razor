@@ -457,18 +457,9 @@
 </MudContainer>
 
 @code {
-    private async Task ScrollToSection(string sectionId)
-    {
-        await JSRuntime.InvokeVoidAsync("scrollIntoView", sectionId);
-    }
+    private async Task ScrollToSection(string sectionId) => await JSRuntime.InvokeVoidAsync("scrollIntoView", sectionId);
 
-    private async Task ScrollToTop()
-    {
-        await JSRuntime.InvokeVoidAsync("scrollToTop");
-    }
+    private async Task ScrollToTop() => await JSRuntime.InvokeVoidAsync("scrollToTop");
 
-    private async Task NavigateHome()
-    {
-        NavigationService.NavigateTo("/");
-    }
+    private async Task NavigateHome() => NavigationService.NavigateTo("/?view=dashboard");
 }
