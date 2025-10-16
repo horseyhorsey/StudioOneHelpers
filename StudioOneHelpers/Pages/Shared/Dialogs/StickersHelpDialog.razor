@@ -1,0 +1,139 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudStack Spacing="4">
+                <!-- Header -->
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Help" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h5" Style="font-weight: bold;">Controller Layout Designer Help</MudText>
+                </MudStack>
+
+                <!-- Main content -->
+                <MudText Typo="Typo.body1" Class="mb-3">
+                    The Controller Layout Designer lets you create custom button layouts for your Studio One controller. 
+                    Design your layout, assign commands or macros to buttons, and export as PDF stickers for your hardware controller.
+                </MudText>
+
+                <!-- Features list -->
+                <MudStack Spacing="3">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.GridOn" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Grid Configuration</MudText>
+                            <MudText Typo="Typo.body2">
+                                Set the number of rows and columns for your controller layout. Use the "Reset / Update Grid" button 
+                                to apply changes and create a fresh layout with the new dimensions.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Manage Buttons</MudText>
+                            <MudText Typo="Typo.body2">
+                                Click "Manage Buttons" to assign commands or macros to specific buttons. You can also set custom names, 
+                                colors, and shapes for each button to match your controller's physical layout.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">PDF Export Settings</MudText>
+                            <MudText Typo="Typo.body2">
+                                Configure the size of your sticker buttons in millimeters or centimeters. The system will 
+                                generate a PDF with your button layout that you can print and cut out for your controller.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Save & Reset</MudText>
+                            <MudText Typo="Typo.body2">
+                                Use "Save Layout" to store your current design. "Reset" clears all button assignments and 
+                                returns to the default layout. Your settings are automatically saved to your browser's local storage.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.TouchApp" Color="Color.Info" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Button Assignment</MudText>
+                            <MudText Typo="Typo.body2">
+                                Click any button in the grid to select it, then use the "Manage Buttons" dialog to assign 
+                                Studio One commands or macros. Buttons show their assigned text or custom names when configured.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+
+                <!-- Workflow steps -->
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.h6" Style="font-weight: bold; margin-bottom: 16px;">Quick Start Workflow</MudText>
+
+                <MudStack Spacing="3">
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 1: Configure Your Grid</MudText>
+                            <MudText Typo="Typo.body2">
+                                Set the rows and columns to match your controller's physical button layout, then click "Reset / Update Grid".
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Color="Color.Secondary" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 2: Assign Commands</MudText>
+                            <MudText Typo="Typo.body2">
+                                Click "Manage Buttons" to open the assignment dialog. Select buttons and assign Studio One commands or macros to them.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Start">
+                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: bold;">Step 3: Export to PDF</MudText>
+                            <MudText Typo="Typo.body2">
+                                Set your button size preferences, then click "Export PDF" to generate printable stickers for your controller.
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+
+                <!-- Important tips -->
+                <MudAlert Severity="Severity.Warning" Class="mt-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Important:</strong> Maximum recommended columns is 13. If you have more columns, consider reducing 
+                        button size or splitting into multiple pages. Large layouts may not fit properly on standard paper sizes.
+                    </MudText>
+                </MudAlert>
+
+                <MudAlert Severity="Severity.Info" Class="mt-4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Tip:</strong> Your layout is automatically saved as you work. You can close and reopen this dialog 
+                        anytime to continue editing your controller design.
+                    </MudText>
+                </MudAlert>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    void Cancel() => MudDialog.Cancel();
+}

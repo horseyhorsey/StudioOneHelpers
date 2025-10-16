@@ -1,0 +1,155 @@
+@using StudioOneHelpers.Models
+@using StudioOneHelpers.Services
+@inject IDialogService DialogService
+
+<MudDialog @bind-IsVisible="_isVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h5" Style="font-weight:bold">Button Management Help</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="mt-2" MaxWidth="MaxWidth.Large">
+            <MudStack Spacing="4">
+                <!-- Overview Section -->
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Style="margin-right: 8px;" />
+                        Overview
+                    </MudText>
+                    <MudText Typo="Typo.body1">
+                        The Button Management dialog allows you to customize your controller buttons, assign commands or macros, 
+                        and organize your workflow. Each button can be personalized with custom names, colors, and shapes.
+                    </MudText>
+                </MudPaper>
+
+                <!-- Search Section -->
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Search" Style="margin-right: 8px;" />
+                        Search & Filter
+                    </MudText>
+                    <MudText Typo="Typo.body1">
+                        Use the search field to find your custom button names
+                    </MudText>
+                    <MudList Dense="true" Class="mt-2" T="string">
+                        <MudListItem>
+                            <MudText Typo="Typo.body2">• Custom name you've assigned</MudText>
+                        </MudListItem>
+                        <MudListItem>
+                            <MudText Typo="Typo.body2">• Assigned command or macro name</MudText>
+                        </MudListItem>
+                    </MudList>
+                </MudPaper>
+
+                <!-- Button Customization Section -->
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Palette" Style="margin-right: 8px;" />
+                        Button Customization
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.body1" Style="font-weight:bold;">Custom Name</MudText>
+                        <MudText Typo="Typo.body2">
+                            Give your buttons meaningful names like "Record", "Play", or "Mix" to make them easier to identify.
+                        </MudText>
+                        
+                        <MudText Typo="Typo.body1" Style="font-weight:bold;">Color Coding</MudText>
+                        <MudText Typo="Typo.body2">
+                            Choose from 10 different colors to visually organize your buttons by function or importance.
+                        </MudText>
+                        
+                        <MudText Typo="Typo.body1" Style="font-weight:bold;">Shape Selection</MudText>
+                        <MudText Typo="Typo.body2">
+                            Select between square and circle shapes to match your visual preferences.
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Assignment Section -->
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Assignment" Style="margin-right: 8px;" />
+                        Assigning Commands & Macros
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.body1" Style="font-weight:bold;">How to Assign:</MudText>
+                        <MudList Dense="true" T="string">
+                            <MudListItem>
+                                <MudText Typo="Typo.body2">1. Click the "Assign" button next to any button</MudText>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudText Typo="Typo.body2">2. Select a command category from the list</MudText>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudText Typo="Typo.body2">3. Choose the specific command or macro</MudText>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudText Typo="Typo.body2">4. The button will show the assigned command name</MudText>
+                            </MudListItem>
+                        </MudList>
+                        
+                        <MudText Typo="Typo.body1" Style="font-weight:bold;">Clearing Assignments:</MudText>
+                        <MudText Typo="Typo.body2">
+                            Click the red "Clear" button to remove any assigned command or macro from a button. 🗑️
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Status Indicators Section -->
+                <MudPaper Elevation="1" Class="pa-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="margin-right: 8px;" />
+                        Status Indicators
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudChip Color="Color.Success" Size="Size.Small" T="string">Assigned</MudChip>
+                            <MudText Typo="Typo.body2">- Button has a command or macro assigned</MudText>
+                        </MudStack>
+                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                            <MudChip Color="Color.Default" Size="Size.Small" T="string">Unassigned</MudChip>
+                            <MudText Typo="Typo.body2">- Button is available for assignment</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Tips Section -->
+                <MudPaper Elevation="1" Class="pa-4" Style="background-color: #f3f4f6;">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold; color: #1976d2; margin-bottom: 12px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Style="margin-right: 8px;" />
+                        Pro Tips
+                    </MudText>
+                    <MudList Dense="true" T="string">                        
+                        <MudListItem>
+                            <MudText Typo="Typo.body2">• Use descriptive custom names that make sense in your workflow</MudText>
+                        </MudListItem>
+                        <MudListItem>
+                            <MudText Typo="Typo.body2">• Save your changes regularly to preserve your customizations</MudText>
+                        </MudListItem>
+                    </MudList>
+                </MudPaper>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary" Variant="Variant.Filled">Got it!</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    private bool _isVisible = true;
+    
+    private DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Large,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = true
+    };
+    
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+}

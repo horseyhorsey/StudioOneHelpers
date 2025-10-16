@@ -13,6 +13,15 @@ public class StickerLayoutService
         _localStorage = localStorage;
     }
 
+    /// <summary>Model for storing layout data in localStorage</summary>
+    private class StickerLayoutData
+    {
+        public List<ControllerButton> Buttons { get; set; } = new();
+        public int GridRows { get; set; }
+        public int GridColumns { get; set; }
+        public DateTime LastModified { get; set; }
+    }
+
     /// <summary>Save sticker layout to localStorage</summary>
     /// <param name="buttons">List of controller buttons</param>
     /// <param name="gridRows">Number of rows in grid</param>
@@ -20,7 +29,7 @@ public class StickerLayoutService
     /// <returns>Task</returns>
     public async Task SaveLayoutToStorageAsync(List<ControllerButton> buttons, int gridRows, int gridColumns)
     {
-        var layoutData = new
+        var layoutData = new StickerLayoutData
         {
             Buttons = buttons,
             GridRows = gridRows,
@@ -28,10 +37,7 @@ public class StickerLayoutService
             LastModified = DateTime.Now
         };
 
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        string jsonString = JsonSerializer.Serialize(layoutData, options);
-        
-        await _localStorage.SetItemAsync("StickerLayout", jsonString);
+        await _localStorage.SetItemAsync("StickerLayout", layoutData);
     }
 
     /// <summary>Load sticker layout from localStorage</summary>
@@ -40,27 +46,10 @@ public class StickerLayoutService
     {
         try
         {
-            var json = await _localStorage.GetItemAsync<string>("StickerLayout") ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(json))
+            var layoutData = await _localStorage.GetItemAsync<StickerLayoutData>("StickerLayout");
+            if (layoutData != null)
             {
-                var layoutData = JsonSerializer.Deserialize<dynamic>(json);
-                if (layoutData != null)
-                {
-                    // Parse the dynamic object to extract data
-                    var jsonDoc = JsonDocument.Parse(json);
-                    var root = jsonDoc.RootElement;
-                    
-                    var buttons = new List<ControllerButton>();
-                    if (root.TryGetProperty("Buttons", out var buttonsElement))
-                    {
-                        buttons = JsonSerializer.Deserialize<List<ControllerButton>>(buttonsElement.GetRawText()) ?? new List<ControllerButton>();
-                    }
-                    
-                    var rows = root.TryGetProperty("GridRows", out var rowsElement) ? rowsElement.GetInt32() : 4;
-                    var columns = root.TryGetProperty("GridColumns", out var columnsElement) ? columnsElement.GetInt32() : 4;
-                    
-                    return (buttons, rows, columns);
-                }
+                return (layoutData.Buttons, layoutData.GridRows, layoutData.GridColumns);
             }
         }
         catch (Exception)
@@ -153,8 +142,8 @@ public class StickerLayoutService
                 var jsonDoc = JsonDocument.Parse(json);
                 var root = jsonDoc.RootElement;
                 
-                var width = root.TryGetProperty("Width", out var widthElement) ? widthElement.GetDouble() : 20.0;
-                var height = root.TryGetProperty("Height", out var heightElement) ? heightElement.GetDouble() : 15.0;
+                var width = root.TryGetProperty("Width", out var widthElement) ? widthElement.GetDouble() : 12.0;
+                var height = root.TryGetProperty("Height", out var heightElement) ? heightElement.GetDouble() : 12.0;
                 var unit = root.TryGetProperty("Unit", out var unitElement) ? unitElement.GetString() ?? "mm" : "mm";
                 
                 return (width, height, unit);
@@ -165,6 +154,6 @@ public class StickerLayoutService
             // Return default values if deserialization fails
         }
         
-        return (20.0, 15.0, "mm"); // Default: 20mm x 15mm
+        return (12.0, 12.0, "mm"); // Default: 12mm x 12mm
     }
 }

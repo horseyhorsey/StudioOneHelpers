@@ -1,0 +1,62 @@
+@using StudioOneHelpers.Models
+
+<MudDialog @bind-IsVisible="_isVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h5" Style="font-weight:bold">Select Command Category</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="mt-2" MaxWidth="MaxWidth.Small">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.body1">Choose a category to filter commands:</MudText>
+                
+                <MudList Clickable="true" MaxHeight="300px" Style="overflow-y: auto;" T="string">
+                    @if (Sections?.Any() == true)
+                    {
+                        @foreach (var section in Sections)
+                        {
+                            <MudListItem @onclick="@(() => SelectSection(section))" 
+                                         Style="cursor: pointer;">
+                                <MudText Typo="Typo.body2">@(section)</MudText>
+                            </MudListItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudListItem>
+                            <MudText Typo="Typo.body2" Style="color: #666;">No categories available.</MudText>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public List<string> Sections { get; set; } = new();
+    
+    private bool _isVisible = true;
+    
+    private DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = true
+    };
+    
+    private void SelectSection(string section)
+    {
+        MudDialog.Close(DialogResult.Ok(section));
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

@@ -1,0 +1,130 @@
+@using StudioOneHelpers.Services
+
+<MudDialog @bind-IsVisible="_isVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h5" Style="font-weight:bold">Select Command or Macro</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="mt-2" MaxWidth="MaxWidth.Medium">
+            <MudGrid>
+                <!-- Commands Section -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="1" Class="pa-3 mb-3">
+                        <MudText Typo="Typo.h6" Style="font-weight:bold; margin-bottom: 12px;">Commands</MudText>
+                        
+                        <MudTextField @bind-Value="_commandSearch" 
+                                     Placeholder="Search commands..." 
+                                     Adornment="Adornment.Start" 
+                                     AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" 
+                                     Clearable 
+                                     Class="mb-3" />
+                        
+                        <MudList Clickable="true" MaxHeight="200px" Style="overflow-y: auto;" T="string">
+                            @if (FilteredCommands?.Any() == true)
+                            {
+                                @foreach (var command in FilteredCommands)
+                                {
+                                    <MudListItem @onclick="@(() => SelectCommand(command.CommandName))" 
+                                               Style="cursor: pointer;">
+                                        <MudText Typo="Typo.body2">@command.CommandName</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #666;">@command.SectionName</MudText>
+                                    </MudListItem>
+                                }
+                            }
+                            else
+                            {
+                                <MudListItem>
+                                    <MudText Typo="Typo.body2" Style="color: #666;">No commands available.</MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Macros Section -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="1" Class="pa-3">
+                        <MudText Typo="Typo.h6" Style="font-weight:bold; margin-bottom: 12px;">Macros</MudText>
+                        
+                        <MudTextField @bind-Value="_macroSearch" 
+                                     Placeholder="Search macros..." 
+                                     Adornment="Adornment.Start" 
+                                     AdornmentIcon="@Icons.Material.Filled.Search" 
+                                     Immediate="true" 
+                                     Clearable 
+                                     Class="mb-3" />
+                        
+                        <MudList Clickable="true" MaxHeight="200px" Style="overflow-y: auto;" T="string">
+                            @if (FilteredMacros?.Any() == true)
+                            {
+                                @foreach (var macro in FilteredMacros)
+                                {
+                                    <MudListItem @onclick="@(() => SelectCommand(macro.CommandName))" 
+                                               Style="cursor: pointer;">
+                                        <MudText Typo="Typo.body2">@macro.CommandName</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #666;">@macro.SectionName</MudText>
+                                    </MudListItem>
+                                }
+                            }
+                            else
+                            {
+                                <MudListItem>
+                                    <MudText Typo="Typo.body2" Style="color: #666;">No macros available.</MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public List<CommandItem> Commands { get; set; } = new();
+    [Parameter] public string? FilterBySection { get; set; }
+    
+    private bool _isVisible = true;
+    private string _commandSearch = "";
+    private string _macroSearch = "";
+    
+    private DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = true
+    };
+    
+    private List<CommandItem> FilteredCommands => Commands
+        .Where(c => c.SectionName != "Macros")
+        .Where(c => string.IsNullOrEmpty(FilterBySection) || c.SectionName == FilterBySection)
+        .Where(c => string.IsNullOrWhiteSpace(_commandSearch) || 
+                   c.CommandName?.Contains(_commandSearch, StringComparison.OrdinalIgnoreCase) == true ||
+                   c.SectionName?.Contains(_commandSearch, StringComparison.OrdinalIgnoreCase) == true)
+        .ToList();
+    
+    private List<CommandItem> FilteredMacros => Commands
+        .Where(c => c.SectionName == "Macros")
+        .Where(c => string.IsNullOrEmpty(FilterBySection) || c.SectionName == FilterBySection)
+        .Where(c => string.IsNullOrWhiteSpace(_macroSearch) || 
+                   c.CommandName?.Contains(_macroSearch, StringComparison.OrdinalIgnoreCase) == true ||
+                   c.SectionName?.Contains(_macroSearch, StringComparison.OrdinalIgnoreCase) == true)
+        .ToList();
+    
+    private void SelectCommand(string commandName)
+    {
+        MudDialog.Close(DialogResult.Ok(commandName));
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

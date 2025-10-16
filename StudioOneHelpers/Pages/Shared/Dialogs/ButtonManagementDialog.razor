@@ -1,0 +1,268 @@
+@using StudioOneHelpers.Models
+@using StudioOneHelpers.Services
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@inject IDialogService DialogService
+
+<MudDialog @bind-IsVisible="_isVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudText Align=Align.Center Typo="Typo.h5" Style="font-weight:bold">Button Management</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Help" 
+                           Color="Color.Primary" 
+                           Size="Size.Small"
+                           OnClick="ShowHelp" 
+                           Title="Show Help" />
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Class="mt-2" MaxWidth="MaxWidth.ExtraLarge">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.subtitle1" Style="font-weight:bold">Controller Buttons</MudText>
+                
+                <MudTextField @bind-Value="_searchText" 
+                             Placeholder="Search buttons..." 
+                             Adornment="Adornment.Start" 
+                             AdornmentIcon="@Icons.Material.Filled.Search" 
+                             Immediate="true" 
+                             Clearable 
+                             Class="mb-3" />
+                
+                <MudPaper Elevation="1" Class="pa-3" Style="max-height: 500px; overflow-y: auto;">
+                    @if (FilteredButtons?.Any() == true)
+                    {
+                        @foreach (var button in FilteredButtons)
+                        {
+                            <MudPaper Elevation="2" Class="pa-3 mb-3">
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="3">
+                                    <!-- Button Position -->
+                                    <MudChip Color="Color.Primary" Size="Size.Small" T="string">
+                                        @button.ButtonLabel
+                                    </MudChip>
+                                    
+                                    <!-- Custom Name Field -->
+                                    <MudTextField @bind-Value="button.CustomName" 
+                                                 Label="Custom Name" 
+                                                 Variant="Variant.Outlined" 
+                                                 Style="min-width: 150px;"
+                                                 @onchange="@(() => UpdateButton(button))" />
+                                    
+                                    <!-- Assigned Command/Macro -->
+                                    <MudChip Color="@(button.IsAssigned? Color.Success: Color.Default)" T="string"
+                                             Size="Size.Small" 
+                                             Style="min-width: 120px;">
+                                        @(button.AssignedText ?? "Unassigned")
+                                    </MudChip>
+                                    
+                                    <!-- Color Picker -->
+                                    <MudSelect @bind-Value="button.Color" 
+                                               Label="Color" 
+                                               T="string" 
+                                               Style="min-width: 120px;"
+                                               @onchange="@(() => UpdateButton(button))">
+                                        @foreach (var color in _availableColors)
+                                        {
+                                            <MudSelectItem Value="@color.Value">
+                                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                    <div style="width: 20px; height: 20px; background-color: @color.Value; border: 1px solid #ccc; border-radius: 3px;"></div>
+                                                    <MudText>@color.Key</MudText>
+                                                </MudStack>
+                                            </MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                    
+                                    <!-- Shape Picker -->
+                                    <MudSelect @bind-Value="button.Shape" 
+                                               Label="Shape" 
+                                               T="string" 
+                                               Style="min-width: 100px;"
+                                               @onchange="@(() => UpdateButton(button))">
+                                        <MudSelectItem Value="@("square")">Square</MudSelectItem>
+                                        <MudSelectItem Value="@("circle")">Circle</MudSelectItem>
+                                    </MudSelect>
+                                    
+                                    <!-- Assign Command/Macro Button -->
+                                    <MudButton StartIcon="@Icons.Material.Filled.Assignment" 
+                                               Color="Color.Primary" 
+                                               Size="Size.Small"
+                                               Variant="Variant.Filled"
+                                               OnClick="@(() => AssignCommandToButton(button))">
+                                        Assign
+                                    </MudButton>
+                                    
+                                    <!-- Clear Button -->
+                                    <MudIconButton Icon="@Icons.Material.Filled.Clear" 
+                                                   Color="Color.Error" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => ClearButton(button))" />
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Style="color: #666; text-align: center; padding: 20px;">
+                            No buttons found.
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="SaveChanges" Color="Color.Success" Variant="Variant.Filled">Save Changes</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public List<ControllerButton> Buttons { get; set; } = new();
+    [Parameter] public List<CommandItem> Commands { get; set; } = new();
+    [Parameter] public EventCallback<List<ControllerButton>> OnButtonsChanged { get; set; }
+    
+    private bool _isVisible = true;
+    private string _searchText = "";
+    private Dictionary<string, string> _availableColors = new();
+    
+    private DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.ExtraLarge,
+        FullWidth = true,
+        CloseButton = true,
+        BackdropClick = true
+    };
+    
+    protected override void OnInitialized()
+    {
+        _availableColors = new Dictionary<string, string>
+        {
+            { "Green", "#4CAF50" },
+            { "Red", "#F44336" },
+            { "Pink", "#E91E63" },
+            { "Blue", "#2196F3" },
+            { "Yellow", "#FFEB3B" },
+            { "Orange", "#FF9800" },
+            { "Purple", "#9C27B0" },
+            { "Teal", "#009688" },
+            { "Gray", "#9E9E9E" },
+            { "Black", "#424242" }
+        };
+    }
+    
+    private List<ControllerButton> FilteredButtons => Buttons
+        .Where(b => string.IsNullOrWhiteSpace(_searchText) || 
+                   b.ButtonLabel?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true ||
+                   b.CustomName?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true ||
+                   b.AssignedText?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true)
+        .OrderBy(b => b.Row)
+        .ThenBy(b => b.Column)
+        .ToList();
+    
+    private void UpdateButton(ControllerButton button)
+    {
+        // Button is updated through binding, just trigger state change
+        StateHasChanged();
+    }
+    
+    private void ClearButton(ControllerButton button)
+    {
+        button.AssignedText = null;
+        button.CustomName = null;
+        StateHasChanged();
+    }
+    
+    private async Task AssignCommandToButton(ControllerButton button)
+    {
+        try
+        {
+            // Get unique sections from commands
+            var sections = Commands.Select(c => c.SectionName).Distinct().Where(s => !string.IsNullOrEmpty(s)).ToList();
+            
+            if (!sections.Any())
+            {
+                // No commands available, show message
+                return;
+            }
+            
+            // Show category selection dialog
+            var categoryOptions = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseButton = true,
+                BackdropClick = true
+            };
+
+            var categoryParameters = new DialogParameters<CategorySelectionDialog>
+            {
+                { x => x.Sections, sections }
+            };
+
+            var categoryDialog = await DialogService.ShowAsync<CategorySelectionDialog>("Select Command Category", categoryParameters, categoryOptions);
+            var categoryResult = await categoryDialog.Result;
+
+            if (!categoryResult.Canceled && categoryResult.Data is string selectedSection)
+            {
+                // Show command selection dialog with filtered section
+                var commandOptions = new DialogOptions()
+                {
+                    MaxWidth = MaxWidth.Medium,
+                    FullWidth = true,
+                    CloseButton = true,
+                    BackdropClick = true
+                };
+
+                var commandParameters = new DialogParameters<CommandMacroSelectionDialog>
+                {
+                    { x => x.Commands, Commands },
+                    { x => x.FilterBySection, selectedSection }
+                };
+
+                var commandDialog = await DialogService.ShowAsync<CommandMacroSelectionDialog>("Select Command or Macro", commandParameters, commandOptions);
+                var commandResult = await commandDialog.Result;
+
+                if (!commandResult.Canceled && commandResult.Data is string selectedCommand)
+                {
+                    button.AssignedText = selectedCommand;
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error silently for now
+        }
+    }
+    
+    private async Task SaveChanges()
+    {
+        await OnButtonsChanged.InvokeAsync(Buttons);
+        MudDialog.Close(DialogResult.Ok(Buttons));
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    
+    private async Task ShowHelp()
+    {
+        try
+        {
+            var helpOptions = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true,
+                CloseButton = true,
+                BackdropClick = true
+            };
+
+            await DialogService.ShowAsync<ButtonManagementHelpDialog>("Button Management Help", helpOptions);
+        }
+        catch (Exception ex)
+        {
+            // Handle error silently for now
+        }
+    }
+}

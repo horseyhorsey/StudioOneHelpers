@@ -20,6 +20,12 @@
             <!-- Header with search and controls -->            
             <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2" Style="flex-shrink: 0;">                
                 <MudText Align="Align.Center" Typo="Typo.h5" Style="font-weight:bold">Commands & Macros</MudText>
+                <MudTooltip Text="View Help">
+                    <MudButton OnClick="@ShowHelp"
+                               StartIcon="@Icons.Material.Filled.Help"
+                               Color="Color.Info"
+                               Variant="Variant.Outlined">Help</MudButton>
+                </MudTooltip>
                 <MudSpacer />
                 <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Clearable
                               AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Style="min-width: 300px;"></MudTextField>
@@ -38,13 +44,7 @@
                                StartIcon="@Icons.Material.Filled.PictureAsPdf"
                                Color="Color.Error"
                                Variant="Variant.Filled">PDF</MudButton>
-                </MudTooltip>
-                <MudTooltip Text="View Help">
-                    <MudButton OnClick="@ShowHelp"
-                               StartIcon="@Icons.Material.Filled.Help"
-                               Color="Color.Info"
-                               Variant="Variant.Outlined">Help</MudButton>
-                </MudTooltip>
+                </MudTooltip>                
             </MudStack>
         </MudItem>
 

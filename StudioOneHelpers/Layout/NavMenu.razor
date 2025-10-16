@@ -1,0 +1,61 @@
+﻿@using StudioOneHelpers.Services
+<MudPaper Width="150px" Elevation="0" Class="py-3">
+    <MudNavMenu Color="Color.Info">
+        <MudNavLink  OnClick=NavigateToHome Icon="@Icons.Material.Filled.Dashboard">Home</MudNavLink>                
+        <MudNavLink OnClick=NavigateToCommands Icon="@Icons.Material.Filled.Keyboard">Cmds</MudNavLink>
+        <MudNavLink OnClick=NavigateToPlugins Icon="@Icons.Material.Filled.Extension">Plugins</MudNavLink>
+        <MudNavLink OnClick=@(() => NavigationService.NavigateToPresetCategory("All")) Icon="@Icons.Material.Filled.FilePresent">Presets</MudNavLink>
+        <MudNavLink OnClick="NavigateToStickers" Icon="@Icons.Material.Filled.StickyNote2">Stickers</MudNavLink>
+        <MudNavLink OnClick="NavigateToGuide" Icon="@Icons.Material.Filled.Whatshot">Guide</MudNavLink>
+    </MudNavMenu>
+</MudPaper>
+
+@code
+{
+    [CascadingParameter] NavigationService NavigationService { get; set; }
+    [CascadingParameter] ISnackbar Snackbar { get; set; }
+
+    // Available preset categories
+    private List<string> availableCategories = new();
+    private string? presetsDataStatus;
+
+    #region Navigation Methods - Bypass GitHub pages routing
+    private void NavigateToHome() => NavigationService.NavigateToHome();
+    private void NavigateToCommands() => NavigationService.NavigateToCommands();
+    private void NavigateToPlugins() => NavigationService.NavigateToPlugins();
+    // private void NavigateToPresetCategory(string category) => NavigateToPresetCategory(category);
+    private void NavigateToStickers() => NavigationService.NavigateToStickers();
+    private void NavigateToGuide() => NavigationService.NavigateToGuide();
+
+
+    #endregion
+}
+
+@* <MudButtonGroup Variant="Variant.Text" Color="Color.Secondary" Size="Size.Small" Class="mr-4">
+
+
+    
+    <MudButton StartIcon="@Icons.Material.Filled.School" OnClick="NavigateToGuide">Guide</MudButton>
+
+    
+    <MudButton StartIcon="@Icons.Material.Filled.Keyboard"
+               OnClick="NavigateToCommands"
+               Disabled="@(commandsDataStatus == null)">Commands</MudButton>
+    <MudButton StartIcon="@Icons.Material.Filled.Extension"
+               OnClick="NavigateToPlugins"
+               Disabled="@(pluginsDataStatus == null)">Plugins</MudButton>
+    <MudButton StartIcon="@Icons.Material.Filled.Label"
+               OnClick="NavigateToStickers">Stickers</MudButton>
+    @if (availableCategories.Any())
+    {
+        <MudMenu StartIcon="@Icons.Material.Filled.Category"
+                 Color="Color.Secondary" Size="Size.Small"
+                 Class="mr-2" Label="Presets">
+            <MudDivider />
+            @foreach (var category in availableCategories)
+            {
+                <MudMenuItem @onclick="() => NavigateToPresetCategory(category)">@category</MudMenuItem>
+            }
+        </MudMenu>
+    }
+</MudButtonGroup> *@

@@ -38,6 +38,25 @@
                         <!-- Header with search and controls -->
                         <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-4" Style="flex-shrink: 0;">
                             <MudText Typo="Typo.h5" Style="font-weight: bold;">@CategoryName Presets</MudText>
+                            @if (availableCategories.Any())
+                            {
+                                <MudMenu StartIcon="@Icons.Material.Filled.Folder"
+                                         Color="Color.Tertiary" 
+                                         Variant="Variant.Outlined"
+                                         Size="Size.Small"
+                                         Label="Change Category">
+                                    @foreach (var category in availableCategories)
+                                    {
+                                        <MudMenuItem OnClick="@(() => NavigateToCategory(category))" 
+                                                     Icon="@Icons.Material.Filled.Folder">
+                                            @category
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            }
+                            <MudTooltip Text="View Help">
+                                <MudButton OnClick="ShowHelp" Size="Size.Small" StartIcon="@Icons.Material.Filled.Help" Color="Color.Info" Variant="Variant.Outlined">Help</MudButton>
+                            </MudTooltip>
                             <MudSpacer />
                             <MudTextField @bind-Value="searchString" 
                                           Placeholder="Search presets..." 
@@ -52,10 +71,7 @@
                                           Style="min-width: 300px;" />
                             <MudTooltip Text="Export to PDF">
                                 <MudButton OnClick="PrintPage" Size="Size.Small" StartIcon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Variant="Variant.Filled">PDF</MudButton>
-                            </MudTooltip>
-                            <MudTooltip Text="View Help">
-                                <MudButton OnClick="ShowHelp" Size="Size.Small" StartIcon="@Icons.Material.Filled.Help" Color="Color.Info" Variant="Variant.Outlined">Help</MudButton>
-                            </MudTooltip>
+                            </MudTooltip>                            
                         </MudStack>
 
                         <!-- Data Grid - takes remaining space -->
@@ -148,14 +164,14 @@
                                             </MudStack>
                                         </CellTemplate>
                                     </PropertyColumn>
-                                    <PropertyColumn Property="x => x.SubFolder" Title="Sub Folder" Filterable="true">
+                                    <PropertyColumn Property="x => x.SubFolder" Title="SubFolder" Filterable="true">
                                         <CellTemplate>
                                             <MudStack Row Spacing="1" AlignItems="AlignItems.Center">
                                                 @if (!string.IsNullOrEmpty(context.Item.SubFolder))
                                                 {
-                                                    <MudTooltip Text="Filter by this sub folder">
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Search" 
-                                                                       Size="Size.Small" 
+                                                    <MudTooltip Text="Filter by this subfolder">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                                                       Size="Size.Small"
                                                                        Color="@Color.Primary"
                                                                        OnClick="@(() => FilterByValue("SubFolder", context.Item.SubFolder))" />
                                                     </MudTooltip>
@@ -164,22 +180,26 @@
                                             </MudStack>
                                         </CellTemplate>
                                     </PropertyColumn>
-                                    <TemplateColumn Title="Actions" Sortable="false">
-                                        <CellTemplate>
-                                            <MudStack Row Spacing="1">
-                                                <MudTooltip Text="Generate Macro">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Code" 
-                                                                   Size="Size.Small" 
-                                                                   Color="@Color.Primary"
+                                    @if (CategoryName != "MusicEffect" && CategoryName != "PatternBank")
+                                    {
+                                        <TemplateColumn Title="Macro" Groupable="false" Width="80">
+                                            <CellTemplate>
+                                                <MudTooltip Text="Create Studio One Macro">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                                   Size="Size.Small"
+                                                                   Color="@Color.Success"
                                                                    OnClick="@(() => GenerateMacro(context.Item))" />
                                                 </MudTooltip>
-                                            </MudStack>
-                                        </CellTemplate>
-                                    </TemplateColumn>
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                    }
                                 </Columns>
                                 <PagerContent>
-                                    <MudDataGridPager T="PresetDescriptor" PageSizeOptions="new int[] { 10, 25, 50, 100 }"/>
+                                    <MudDataGridPager T="PresetDescriptor"  PageSizeOptions="new int[] { 10, 25, 50, 100 }"/>
                                 </PagerContent>
+                                <NoRecordsContent>
+                                    <MudText>No @CategoryName presets found matching your criteria.</MudText>
+                                </NoRecordsContent>
                             </MudDataGrid>
                         </div>
                     </div>
@@ -192,49 +212,77 @@
 @code {
     [Parameter] public string? CategoryName { get; set; }
 
-    private MudDataGrid<PresetDescriptor>? dataGrid;
-    private List<PresetDescriptor> allPresets = new();
-    private List<PresetDescriptor> filteredPresets = new();
     private string searchString = "";
     private bool isLoading = true;
     private string? errorMessage;
+    private System.Threading.Timer? searchTimer;
+    private MudDataGrid<PresetDescriptor>? dataGrid;
     private int totalCount = 0;
+    private string? _lastLoadedCategory;
+    private int currentPageIndex = 0;
+    private string? _activeFilter = null;
+    private string? _filterValue = null;
+    private List<string> availableCategories = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadPresets();
+        // Load plugin mappings for ClassID to Plugin Name lookup
+        await PluginLookupService.LoadPluginMappingsAsync();
+        // Load available categories for the menu
+        availableCategories = await DatabaseService.LoadAvailableCategoriesFromStorageAsync();
+        await LoadPresetsForCategory();
+        _lastLoadedCategory = CategoryName;
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (CategoryName != null)
+        // Reload data when CategoryName parameter changes
+        if (!string.IsNullOrEmpty(CategoryName) && CategoryName != _lastLoadedCategory)
         {
-            await LoadPresets();
+            // Reset search when category changes
+            searchString = "";
+            await LoadPresetsForCategory();
+            
+            // Reload the data grid to show new category data
+            if (dataGrid != null)
+            {
+                await dataGrid.ReloadServerData();
+            }
+            
+            _lastLoadedCategory = CategoryName;
         }
     }
 
-    private async Task LoadPresets()
+    private async Task LoadPresetsForCategory()
     {
-        if (string.IsNullOrEmpty(CategoryName))
-        {
-            errorMessage = "No category specified";
-            isLoading = false;
-            return;
-        }
-
         isLoading = true;
         errorMessage = null;
         StateHasChanged();
 
         try
         {
-            allPresets = await DatabaseService.LoadPresetsByCategoryFromStorageAsync(CategoryName) ?? new List<PresetDescriptor>();
-            filteredPresets = allPresets.ToList();
-            totalCount = allPresets.Count;
+            if (string.IsNullOrEmpty(CategoryName))
+            {
+                errorMessage = "Category name is required.";
+                return;
+            }
+
+            // Get total count for the category without loading all data
+            var categoryPresets = await DatabaseService.LoadPresetsByCategoryFromStorageAsync(CategoryName);
+            
+            if (categoryPresets == null || !categoryPresets.Any())
+            {
+                errorMessage = $"No {CategoryName} presets found. Please import your Studio One database first.";
+                return;
+            }
+
+            totalCount = categoryPresets.Count;
+            Snackbar.Add($"Found {totalCount} {CategoryName} presets", Severity.Success);
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading presets: {ex.Message}";
+            errorMessage = $"Error loading {CategoryName} presets: {ex.Message}";
+            Snackbar.Add(errorMessage, Severity.Error);
         }
         finally
         {
@@ -243,55 +291,131 @@
         }
     }
 
+    // DataGrid server-side data loading with optimized pagination and sorting
     private async Task<GridData<PresetDescriptor>> LoadServerData(GridState<PresetDescriptor> state)
     {
-        var queryable = filteredPresets.AsQueryable();
-        
-        // Apply search filter
-        if (!string.IsNullOrEmpty(searchString))
+        try
         {
-            var searchLower = searchString.ToLower();
-            queryable = queryable.Where(p => 
-                (!string.IsNullOrEmpty(p.Vendor) && p.Vendor.ToLower().Contains(searchLower)) ||
-                (!string.IsNullOrEmpty(p.ClassId) && p.ClassId.ToLower().Contains(searchLower)) ||
-                (!string.IsNullOrEmpty(p.Title) && p.Title.ToLower().Contains(searchLower)) ||
-                (!string.IsNullOrEmpty(p.Creator) && p.Creator.ToLower().Contains(searchLower)) ||
-                (!string.IsNullOrEmpty(p.SubFolder) && p.SubFolder.ToLower().Contains(searchLower)));
-        }
+            // Force page size to 25 if it's not set correctly
+            var pageSize = state.PageSize > 0 ? state.PageSize : 25;
+            
+            // Use our controlled page index instead of state.Page
+            var pageToLoad = currentPageIndex;
+            
+            // Extract sorting information from GridState
+            string? sortBy = null;
+            bool sortAscending = true;
+            
+            if (state.SortDefinitions != null && state.SortDefinitions.Any())
+            {
+                var sortDefinition = state.SortDefinitions.First();
+                sortBy = sortDefinition.SortBy;
+                sortAscending = sortDefinition.Descending == false;
+            }
+            
+            // Use the optimized pagination method that loads only the needed data
+            var result = await DatabaseService.LoadPresetsByCategoryPaginatedAsync(
+                CategoryName, 
+                pageToLoad, 
+                pageSize, 
+                searchString,
+                sortBy,
+                sortAscending,
+                _activeFilter,
+                _filterValue);
 
-        var items = queryable.ToList();
-        return new GridData<PresetDescriptor>
+            return new GridData<PresetDescriptor> 
+            { 
+                Items = result.Items, 
+                TotalItems = result.TotalCount 
+            };
+        }
+        catch (Exception ex)
         {
-            Items = items.Skip(state.Page * state.PageSize).Take(state.PageSize),
-            TotalItems = items.Count
-        };
+            Console.WriteLine($"Error loading server data: {ex.Message}");
+            return new GridData<PresetDescriptor> { Items = new List<PresetDescriptor>(), TotalItems = 0 };
+        }
     }
 
-    private async Task OnSearchChanged(KeyboardEventArgs e)
+    private void OnSearchChanged(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        // If search string is cleared, clear the button filter too
+        if (string.IsNullOrEmpty(searchString))
         {
-            await dataGrid?.ReloadServerData();
+            _activeFilter = null;
+            _filterValue = null;
+        }
+        
+        // Debounce the search to avoid excessive filtering
+        searchTimer?.Dispose();
+        searchTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                // Reset to page 1 when searching and reload DataGrid
+                currentPageIndex = 0;
+                if (dataGrid != null)
+                {
+                    await dataGrid.ReloadServerData();
+                }
+                StateHasChanged();
+            });
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private void FilterByValue(string filterType, string? value)
+    {
+        _activeFilter = filterType;
+        _filterValue = value;
+        searchString = value; // Set the search string so user can see what they're filtering by
+        
+        // Reset to page 1 when filtering and reload DataGrid
+        currentPageIndex = 0;
+        if (dataGrid != null)
+        {
+            dataGrid.ReloadServerData();
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSearchCleared()
+    {
+        // Reset to page 1 when search is cleared and reload DataGrid
+        currentPageIndex = 0;
+        if (dataGrid != null)
+        {
+            await dataGrid.ReloadServerData();
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnSortChanged(GridState<PresetDescriptor> state)
+    {
+        // Reset to page 1 when sorting and reload DataGrid
+        currentPageIndex = 0;
+        if (dataGrid != null)
+        {
+            await dataGrid.ReloadServerData();
+        }
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        // Update our page index when user navigates pages
+        currentPageIndex = page;
+        if (dataGrid != null)
+        {
+            await dataGrid.ReloadServerData();
         }
     }
 
     private async Task ClearFilters()
     {
+        // Clear the search string and button filters
         searchString = "";
-        await dataGrid?.ReloadServerData();
-    }
-
-    private async Task OnPageChanged(int page)
-    {
-        await dataGrid?.ReloadServerData();
-    }
-
-    private void FilterByValue(string column, string value)
-    {
-        // This would need to be implemented based on the data grid's filtering capabilities
-        // For now, we'll just update the search string
-        searchString = value;
-        _ = dataGrid?.ReloadServerData();
+        _activeFilter = null;
+        _filterValue = null;
+        await OnSearchCleared();
     }
 
     private async Task GenerateMacro(PresetDescriptor preset)
@@ -350,21 +474,78 @@
         }
     }
 
+    /// <summary>Run the javascript "pdfInterop.printPresets" function</summary>
+    /// <returns></returns>
     private async Task PrintPage()
     {
-        await JSRuntime.InvokeVoidAsync("printPage");
+        try
+        {
+            // Check if the JavaScript function exists before calling it
+            var isAvailable = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.pdfInterop !== 'undefined' && typeof window.pdfInterop.printPresets === 'function'");
+            
+            if (isAvailable)
+            {
+                // Load all presets for the category to export
+                var allPresets = await DatabaseService.LoadPresetsByCategoryFromStorageAsync(CategoryName);
+                
+                if (allPresets == null || !allPresets.Any())
+                {
+                    Snackbar.Add("No data to export", Severity.Warning);
+                    return;
+                }
+
+                // Apply search filter if needed
+                var presetsToExport = string.IsNullOrWhiteSpace(searchString) && string.IsNullOrWhiteSpace(_activeFilter)
+                    ? allPresets 
+                    : DatabaseService.FilterPresets(allPresets, searchString, _activeFilter, _filterValue);
+
+                await JSRuntime.InvokeVoidAsync("pdfInterop.printPresets", presetsToExport, CategoryName);
+                Snackbar.Add("PDF generated successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("PDF functionality not available. Please refresh the page.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating PDF: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task ShowHelp()
     {
-        var options = new DialogOptions()
+        var parameters = new DialogParameters<PresetCategoryHelpDialog>
         {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseButton = true,
-            BackdropClick = false
+            { x => x.CategoryName, CategoryName }
         };
 
-        await DialogService.ShowAsync<PresetCategoryHelpDialog>("", options);
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<PresetCategoryHelpDialog>("Help", parameters, options);
+    }
+
+    private async Task NavigateToCategory(string category)
+    {
+        CategoryName = category;
+        searchString = "";
+        _activeFilter = null;
+        _filterValue = null;
+        await LoadPresetsForCategory();
+        if (dataGrid != null)
+        {
+            await dataGrid.ReloadServerData();
+        }
+        _lastLoadedCategory = CategoryName;
+    }
+
+    public void Dispose()
+    {
+        searchTimer?.Dispose();
     }
 }

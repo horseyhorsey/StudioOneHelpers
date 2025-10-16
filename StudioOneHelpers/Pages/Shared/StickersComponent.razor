@@ -1,0 +1,339 @@
+@using Blazored.LocalStorage
+@using StudioOneHelpers.Models
+@using StudioOneHelpers.Pages.Shared.Dialogs
+@using StudioOneHelpers.Services
+@inject StickerLayoutService StickerService
+@inject CommandsProcessingService CommandsService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.ExtraLarge">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+                    <MudText Typo="Typo.h6" Style="font-weight:bold">Controller Layout Designer</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Help" 
+                                   Color="Color.Info" 
+                                   Size="Size.Small" 
+                                   OnClick="@OpenHelpDialogAsync"
+                                   Title="Help" />
+                    <MudSpacer />
+                    <MudButtonGroup Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Save" OnClick="@SaveLayoutAsync" Variant="Variant.Filled">Save Layout</MudButton>                                
+                        <MudButton StartIcon="@Icons.Material.Filled.PictureAsPdf" OnClick="@PrintStickersAsync" Color="Color.Error" Variant="Variant.Filled">Export PDF</MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="@ResetLayoutAsync" Color="Color.Warning" Variant="Variant.Filled">Reset</MudButton>
+                    </MudButtonGroup>
+                </MudStack>
+                
+                <!-- PDF Export Size Settings -->
+                <MudPaper Elevation="1" Class="pa-3 mb-4" Style="background-color: #f5f5f5;">
+                    <MudToolBar Dense>
+                        <MudText Typo="Typo.subtitle2" Style="font-weight:bold">PDF Export Size:</MudText>
+                        <MudNumericField @bind-Value="_buttonWidth" Label="Width" Style="width: 80px" />
+                        <MudNumericField @bind-Value="_buttonHeight" Label="Height" Style="width: 80px" />
+                        <MudSelect @bind-Value="_sizeUnit" Label="Unit" T="string" Style="width: 80px">
+                            <MudSelectItem Value="@("mm")">mm</MudSelectItem>
+                            <MudSelectItem Value="@("cm")">cm</MudSelectItem>
+                        </MudSelect>
+                        <MudButton OnClick="@SaveSizePreferencesAsync" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">Save Size</MudButton>
+                        <MudText Typo="Typo.caption" Style="color: #666;">
+                            Current: @_buttonWidth x @_buttonHeight @_sizeUnit
+                        </MudText>
+                    </MudToolBar>
+                </MudPaper>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12">
+            <!-- Grid Designer -->
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+                    <MudText Typo="Typo.h6">Controller Layout</MudText>
+                    <MudSpacer />
+                    <MudButton StartIcon="@Icons.Material.Filled.Settings" OnClick="@OpenButtonManagementAsync" Color="Color.Secondary" Variant="Variant.Filled">Manage Buttons</MudButton>
+                    <MudTextField @bind-Value="_gridRows" Label="Rows" Type="InputType.Number" Style="width: 80px" />
+                    <MudTextField @bind-Value="_gridColumns" Label="Columns" Type="InputType.Number" Style="width: 80px" />
+                    <MudButton OnClick="@UpdateGridSize" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">Reset / Update Grid</MudButton>
+                </MudStack>
+
+                <!-- Grid Display -->
+                <div style="display: grid; grid-template-columns: repeat(@_gridColumns, 1fr); gap: 4px; max-width: 600px;">
+                    @for (int row = 0; row < _gridRows; row++)
+                    {
+                        @for (int col = 0; col < _gridColumns; col++)
+                        {
+                            var button = _buttons.FirstOrDefault(b => b.Row == row && b.Column == col);
+                            <div class="grid-button-container @(_selectedButtonRow == row && _selectedButtonCol == col ? "selected-button" : "")">
+                                <MudIconButton Style="@GetButtonStyle(button)"
+                                             Class="grid-button">
+                                    
+                                    <!-- Button content -->
+                                    @if (!string.IsNullOrWhiteSpace(button?.CustomName))
+                                    {
+                                        <div class="button-content">
+                                            <MudText Typo="Typo.caption" Style="color: white; text-align: center; font-size: 12px; font-weight: bold; line-height: 1.2; padding: 2px;">
+                                                @button.CustomName
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else if (button?.IsAssigned == true)
+                                    {
+                                        <div class="button-content">
+                                            <MudText Typo="Typo.caption" Style="color: white; text-align: center; font-size: 10px; padding: 2px;">
+                                                @button.AssignedText
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="button-content">
+                                            <MudText Typo="Typo.caption" Style="color: #666; text-align: center; font-size: 10px;">
+                                                @button?.ButtonLabel
+                                            </MudText>
+                                        </div>
+                                    }
+                                </MudIconButton>
+                                
+                                <!-- Button ID and small X below the button -->
+                                <div style="text-align: start; margin-top: 2px; position: relative;">
+                                    <MudText Typo="Typo.caption" Style="font-size: 8px; color: #999;">
+                                        @button?.ButtonLabel
+                                    </MudText>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <MudText Typo="Typo.caption" Class="mt-2">
+                    Click a button to assign a command or macro
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .selected-button {
+        border-color: #1976d2 !important;
+        border-width: 3px !important;
+    }
+    
+    .grid-button-container {
+        position: relative;
+    }
+    
+    .grid-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    
+    .button-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    .grid-button:hover .button-content {
+        opacity: 0.8;
+    }
+</style>
+
+@code {
+    [CascadingParameter] public ILocalStorageService? LocalStorage { get; set; }
+    
+    private List<ControllerButton> _buttons = new();
+    private List<CommandItem>? _commands = new();
+
+    private int _gridRows = 4;
+    private int _gridColumns = 4;
+    private int? _selectedButtonRow;
+    private int? _selectedButtonCol;
+    private ControllerButton? _selectedButton => _selectedButtonRow.HasValue && _selectedButtonCol.HasValue
+        ? _buttons.FirstOrDefault(b => b.Row == _selectedButtonRow && b.Column == _selectedButtonCol)
+        : null;
+
+    private Dictionary<string, string> _availableColors = new();
+
+    // PDF Export Size Settings
+    private double _buttonWidth = 12.0;
+    private double _buttonHeight = 12.0;
+    private string _sizeUnit = "mm";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availableColors = StickerService.GetAvailableColors();
+        await LoadLayoutAsync();
+        await LoadCommandsAsync();
+        await LoadSizePreferencesAsync();
+    }
+
+    private async Task LoadLayoutAsync()
+    {
+        var (buttons, rows, columns) = await StickerService.LoadLayoutFromStorageAsync();
+        _buttons = buttons;
+        _gridRows = rows;
+        _gridColumns = columns;
+    }
+
+    private async Task LoadCommandsAsync()
+    {
+        _commands = await CommandsService.LoadCommandsFromStorageAsync();
+    }
+
+    private async Task LoadSizePreferencesAsync()
+    {
+        var (width, height, unit) = await StickerService.LoadButtonSizePreferencesAsync();
+        _buttonWidth = width;
+        _buttonHeight = height;
+        _sizeUnit = unit;
+    }
+
+    private async Task SaveSizePreferencesAsync()
+    {
+        await StickerService.SaveButtonSizePreferencesAsync(_buttonWidth, _buttonHeight, _sizeUnit);
+        Snackbar.Add("Button size preferences saved!", Severity.Success);
+    }
+
+    private async Task AssignCommand(string commandName)
+    {
+        if (_selectedButton != null)
+        {
+            _selectedButton.AssignedText = commandName;
+            StateHasChanged();
+            Snackbar.Add($"Command '{commandName}' assigned to button {_selectedButton.ButtonLabel}", Severity.Success);
+        }
+    }
+
+    private void UpdateSelectedButton()
+    {
+        // Button is already updated through binding
+        StateHasChanged();
+    }
+
+    private async Task UpdateGridSize()
+    {
+        _buttons = StickerService.CreateDefaultLayout(_gridRows, _gridColumns);
+        _selectedButtonRow = null;
+        _selectedButtonCol = null;
+        await SaveLayoutAsync();
+    }
+
+    private async Task SaveLayoutAsync()
+    {
+        await StickerService.SaveLayoutToStorageAsync(_buttons, _gridRows, _gridColumns);
+        Snackbar.Add("Layout saved successfully!", Severity.Success);
+    }
+
+    private async Task ResetLayoutAsync()
+    {
+        _buttons = StickerService.CreateDefaultLayout(_gridRows, _gridColumns);
+        _selectedButtonRow = null;
+        _selectedButtonCol = null;
+        await SaveLayoutAsync();
+        Snackbar.Add("Layout reset!", Severity.Info);
+    }
+
+    private async Task PrintStickersAsync()
+    {
+        try
+        {
+            // Check if too many columns
+            if (_gridColumns > 13)
+            {
+                Snackbar.Add($"Warning: {_gridColumns} columns is too many! Maximum recommended is 13 columns. Consider reducing button size or columns.", Severity.Warning);
+                return;
+            }
+            
+            var isAvailable = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.pdfInterop !== 'undefined' && typeof window.pdfInterop.printStickers === 'function'");
+
+            if (isAvailable)
+            {
+                await JSRuntime.InvokeVoidAsync("pdfInterop.printStickers", _buttons, _gridRows, _gridColumns, _buttonWidth, _buttonHeight, _sizeUnit);
+                Snackbar.Add("Sticker PDF generated successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("PDF functionality not available. Please refresh the page.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating PDF: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenButtonManagementAsync()
+    {
+        try
+        {
+            var options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.ExtraLarge,
+                FullWidth = true,
+                CloseButton = true,
+                BackdropClick = true
+            };
+
+            var parameters = new DialogParameters<ButtonManagementDialog>
+            {
+                { x => x.Buttons, _buttons },
+                { x => x.Commands, _commands ?? new List<CommandItem>() }
+            };
+
+            var dialog = await DialogService.ShowAsync<ButtonManagementDialog>("Button Management", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data is List<ControllerButton> updatedButtons)
+            {
+                _buttons = updatedButtons;
+                await SaveLayoutAsync();
+                StateHasChanged();
+                Snackbar.Add("Button settings updated!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening button management: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenHelpDialogAsync()
+    {
+        try
+        {
+            var options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Medium,
+                CloseButton = true,
+                BackdropClick = true
+            };
+
+            await DialogService.ShowAsync<StickersHelpDialog>("Controller Layout Designer Help", options);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error opening help dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GetButtonStyle(ControllerButton? button)
+    {
+        if (button == null)
+        {
+            return "width: 80px; height: 60px; border: 2px solid #ccc; border-radius: 4px; background-color: #f5f5f5; position: relative;";
+        }
+
+        var borderRadius = button.Shape == "circle" ? "50%" : "4px";
+        var backgroundColor = !string.IsNullOrEmpty(button.Color) ? button.Color : "#f5f5f5";
+        
+        return $"width: 80px; height: 60px; border: 2px solid #ccc; border-radius: {borderRadius}; background-color: {backgroundColor}; position: relative;";
+    }
+}

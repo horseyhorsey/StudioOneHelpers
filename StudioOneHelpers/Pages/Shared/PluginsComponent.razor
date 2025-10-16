@@ -19,6 +19,12 @@
             <!-- Header with search and controls -->
             <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="mb-2" Style="flex-shrink: 0;">
                 <MudText Typo="Typo.h6" Class="d-none d-md-block" Style="font-weight:bold; min-width: 200px;">Studio One Plugins (Plugins-en.settings)</MudText>
+                <MudTooltip Text="View Help">
+                    <MudButton OnClick="@ShowHelp"
+                               StartIcon="@Icons.Material.Filled.Help"
+                               Color="Color.Info"
+                               Variant="Variant.Outlined">Help</MudButton>
+                </MudTooltip>
                 <MudSpacer />
                 <MudTextField @bind-Value="_searchString" 
                               @bind-Value:after="OnSearchStringChanged" 
@@ -49,13 +55,7 @@
                                StartIcon="@Icons.Material.Filled.PictureAsPdf" 
                                Color="Color.Error" 
                                Variant="Variant.Filled">PDF</MudButton>
-                </MudTooltip>
-                <MudTooltip Text="View Help">
-                    <MudButton OnClick="@ShowHelp" 
-                               StartIcon="@Icons.Material.Filled.Help" 
-                               Color="Color.Info" 
-                               Variant="Variant.Outlined">Help</MudButton>
-                </MudTooltip>
+                </MudTooltip>                
             </MudStack>
         </MudItem>
 
